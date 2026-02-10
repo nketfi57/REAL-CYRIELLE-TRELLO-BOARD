@@ -699,21 +699,11 @@
             transform: translateY(-2px);
         }
 
-        .loading {
+        .empty-state {
             text-align: center;
-            padding: 40px;
-            color: var(--rose-primaire);
-            font-size: 1.2em;
-        }
-
-        .error-message {
-            background: #FFEBEE;
-            color: #C62828;
-            padding: 15px 20px;
-            border-radius: 15px;
-            margin: 20px;
-            text-align: center;
-            border: 2px solid #FFCDD2;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 0.95em;
         }
 
         @media (max-width: 768px) {
@@ -786,7 +776,7 @@
                     <button class="add-card-btn" onclick="openModal('pro')">+ Nouvelle tâche</button>
                 </div>
                 <div class="cards" data-board="pro">
-                    <div class="loading">Chargement...</div>
+                    <div class="empty-state">Aucune tâche pour le moment</div>
                 </div>
             </div>
 
@@ -802,7 +792,7 @@
                     <button class="add-card-btn" onclick="openModal('perso')">+ Nouvelle tâche</button>
                 </div>
                 <div class="cards" data-board="perso">
-                    <div class="loading">Chargement...</div>
+                    <div class="empty-state">Aucune tâche pour le moment</div>
                 </div>
             </div>
 
@@ -818,7 +808,7 @@
                     <button class="add-card-btn" onclick="openModal('urgent')">+ Nouvelle tâche</button>
                 </div>
                 <div class="cards" data-board="urgent">
-                    <div class="loading">Chargement...</div>
+                    <div class="empty-state">Aucune tâche pour le moment</div>
                 </div>
             </div>
         </div>
@@ -892,7 +882,12 @@
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            console.log("Firebase initialisé avec succès");
+            console.log("✅ Firebase initialisé avec succès");
+
+            // Initialiser les boards vides immédiatement
+            ['pro', 'perso', 'urgent'].forEach(board => {
+                renderBoard(board, []);
+            });
 
             // Écouter les changements en temps réel pour chaque board
             ['pro', 'perso', 'urgent'].forEach(board => {
@@ -906,23 +901,13 @@
                         renderBoard(board, cards);
                     }, (error) => {
                         console.error(`Erreur lors de l'écoute de ${board}:`, error);
-                        showError(board, `Erreur de connexion à ${board}`);
                     });
                 } catch (error) {
                     console.error(`Erreur configuration listener ${board}:`, error);
-                    showError(board, "Erreur de configuration");
                 }
             });
         } catch (error) {
-            console.error("Erreur initialisation Firebase:", error);
-            ['pro', 'perso', 'urgent'].forEach(board => {
-                showError(board, "Erreur de connexion Firebase");
-            });
-        }
-
-        function showError(board, message) {
-            const container = document.querySelector(`.cards[data-board="${board}"]`);
-            container.innerHTML = `<div class="error-message">${message}</div>`;
+            console.error("❌ Erreur initialisation Firebase:", error);
         }
 
         function renderBoard(board, cards) {
@@ -935,7 +920,7 @@
             }
 
             if (cards.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">Aucune tâche</div>';
+                container.innerHTML = '<div class="empty-state">Aucune tâche pour le moment</div>';
                 countElement.textContent = '0';
             } else {
                 container.innerHTML = cards.map(card => createCardHTML(card, board)).join('');
