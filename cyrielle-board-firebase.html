@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board de Cyrielle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --rose-primaire: #FF69B4;
+            --rose-accent: #FF1493;
+            --rose-doux: #FFB6D9;
+            --rose-pale: #FFF0F5;
+            --jaune-or: #FFD700;
+            --jaune-clair: #FFF9E6;
+            --blanc: #FFFFFF;
+            --gris-texte: #333333;
+            --gris-clair: #F8F8F8;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #FFF0F5 0%, #FFF9E6 50%, #FFE4EC 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #FF69B4, transparent);
+            top: -200px;
+            left: -200px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        body::after {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #FFD700, transparent);
+            bottom: -150px;
+            right: -150px;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(50px, 50px); }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5em;
+            background: linear-gradient(135deg, #FF69B4 0%, #FFD700 50%, #FF1493 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            letter-spacing: -2px;
+            animation: shimmer 3s linear infinite;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 20px rgba(255, 105, 180, 0.3));
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 25px 35px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            border: 2px solid rgba(255, 105, 180, 0.1);
+            box-shadow: 0 8px 32px rgba(255, 105, 180, 0.15);
+            animation: fadeIn 1s ease-out 0.2s backwards;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 450px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 15px 25px 15px 55px;
+            border: 2px solid var(--rose-pale);
+            border-radius: 30px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1em;
+            transition: all 0.4s ease;
+            background: white;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.08);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--rose-primaire);
+            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+        }
+
+        .stats-mini {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--rose-pale), var(--jaune-clair));
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .stat-badge .number {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5em;
+            color: var(--rose-accent);
+        }
+
+        .stat-badge .label {
+            font-size: 0.9em;
+            color: var(--gris-texte);
+        }
+
+        .boards-container {
+            display: flex;
+            gap: 35px;
+            overflow-x: auto;
+            padding: 25px 10px 50px;
+            min-height: 70vh;
+        }
+
+        .boards-container::-webkit-scrollbar {
+            height: 14px;
+        }
+
+        .boards-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            margin: 0 20px;
+        }
+
+        .boards-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, var(--rose-primaire), var(--jaune-or));
+            border-radius: 10px;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .board {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 30px;
+            min-width: 380px;
+            max-width: 380px;
+            box-shadow: 0 10px 40px rgba(255, 105, 180, 0.12);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: scaleIn 0.6s ease-out backwards;
+        }
+
+        .board:nth-child(1) { animation-delay: 0.1s; }
+        .board:nth-child(2) { animation-delay: 0.2s; }
+        .board:nth-child(3) { animation-delay: 0.3s; }
+
+        .board:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(255, 105, 180, 0.25);
+            border-color: rgba(255, 105, 180, 0.3);
+        }
+
+        .board-header {
+            margin-bottom: 28px;
+            padding-bottom: 22px;
+            border-bottom: 2px solid transparent;
+            background: linear-gradient(90deg, var(--rose-pale), var(--jaune-clair));
+            background-clip: padding-box;
+        }
+
+        .board-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .board-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .board-badge {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            box-shadow: 0 0 15px currentColor;
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .pro .board-badge { background: #FF1493; color: #FF1493; }
+        .perso .board-badge { background: #FF69B4; color: #FF69B4; }
+        .urgent .board-badge { background: #FFD700; color: #FFD700; }
+
+        .pro .board-title { color: #FF1493; }
+        .perso .board-title { color: #FF69B4; }
+        .urgent .board-title { color: #FFD700; }
+
+        .card-count {
+            background: white;
+            color: var(--rose-accent);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.95em;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.15);
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .add-card-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #FF69B4, #FFD700);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .add-card-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .add-card-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .add-card-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.4);
+        }
+
+        .add-card-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-height: 250px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 18px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+            cursor: grab;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border-left: 5px solid var(--rose-primaire);
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--rose-primaire), var(--jaune-or));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 10px 35px rgba(255, 105, 180, 0.2);
+        }
+
+        .card:active {
+            cursor: grabbing;
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+            transform: rotate(3deg) scale(0.98);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .card h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gris-texte);
+            font-size: 1.25em;
+            font-weight: 600;
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .card-priority {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .priority-high {
+            background: linear-gradient(135deg, #FFE5EC, #FFB6D9);
+            color: #C62828;
+        }
+
+        .priority-medium {
+            background: linear-gradient(135deg, #FFF9E6, #FFE6B3);
+            color: #E65100;
+        }
+
+        .priority-low {
+            background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+            color: #2E7D32;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.7;
+            margin-bottom: 14px;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, var(--jaune-clair), #FFFACD);
+            color: #F57F17;
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 2px solid var(--rose-pale);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, var(--rose-pale), #FFE4EC);
+            color: var(--rose-accent);
+        }
+
+        .edit-btn:hover {
+            background: linear-gradient(135deg, var(--rose-doux), #FFB6D9);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #FFE5EC, #FFCDD2);
+            color: #C62828;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #FFCDD2, #EF9A9A);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(198, 40, 40, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 182, 217, 0.25);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 45px;
+            border-radius: 30px;
+            box-shadow: 0 25px 80px rgba(255, 105, 180, 0.3);
+            max-width: 580px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 105, 180, 0.1);
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--rose-pale);
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--rose-primaire);
+            border-radius: 10px;
+        }
+
+        .modal-content h2 {
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(135deg, var(--rose-primaire), var(--jaune-or));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 35px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--gris-texte);
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid var(--rose-pale);
+            border-radius: 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--rose-primaire);
+            box-shadow: 0 0 0 4px rgba(255, 105, 180, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 130px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .tag-input-wrapper {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .tag-input-wrapper input {
+            flex: 1;
+        }
+
+        .add-tag-btn {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--jaune-clair), var(--jaune-or));
+            color: #F57F17;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .add-tag-btn:hover {
+            background: linear-gradient(135deg, var(--jaune-or), #FFC107);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .tag-input-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 18px;
+            margin-top: 35px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.05em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #FF69B4, #FFD700);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.35);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 105, 180, 0.5);
+        }
+
+        .cancel-btn {
+            background: var(--gris-clair);
+            color: var(--gris-texte);
+        }
+
+        .cancel-btn:hover {
+            background: #E0E0E0;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--rose-primaire);
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 3em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+
+            .stats-mini {
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .boards-container {
+                flex-direction: column;
+            }
+            
+            .board {
+                min-width: 100%;
+                max-width: 100%;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cyrielle</h1>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Rechercher une tâche...">
+            </div>
+            <div class="stats-mini">
+                <div class="stat-badge">
+                    <span class="number" id="totalTasks">0</span>
+                    <span class="label">tâches</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="boards-container" id="boardsContainer">
+            <div class="board pro" data-board="pro">
+                <div class="board-header">
+                    <div class="board-header-top">
+                        <div class="board-title">
+                            <span class="board-badge"></span>
+                            <span>Professionnel</span>
+                        </div>
+                        <span class="card-count">0</span>
+                    </div>
+                    <button class="add-card-btn" onclick="openModal('pro')">+ Nouvelle tâche</button>
+                </div>
+                <div class="cards" data-board="pro">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+
+            <div class="board perso" data-board="perso">
+                <div class="board-header">
+                    <div class="board-header-top">
+                        <div class="board-title">
+                            <span class="board-badge"></span>
+                            <span>Personnel</span>
+                        </div>
+                        <span class="card-count">0</span>
+                    </div>
+                    <button class="add-card-btn" onclick="openModal('perso')">+ Nouvelle tâche</button>
+                </div>
+                <div class="cards" data-board="perso">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+
+            <div class="board urgent" data-board="urgent">
+                <div class="board-header">
+                    <div class="board-header-top">
+                        <div class="board-title">
+                            <span class="board-badge"></span>
+                            <span>Urgent</span>
+                        </div>
+                        <span class="card-count">0</span>
+                    </div>
+                    <button class="add-card-btn" onclick="openModal('urgent')">+ Nouvelle tâche</button>
+                </div>
+                <div class="cards" data-board="urgent">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Nouvelle tâche</h2>
+            <form id="cardForm">
+                <div class="form-group">
+                    <label>Titre *</label>
+                    <input type="text" id="cardTitle" placeholder="Titre de la tâche" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="cardDescription" placeholder="Décrivez votre tâche..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Priorité</label>
+                        <select id="cardPriority">
+                            <option value="low">Basse</option>
+                            <option value="medium" selected>Moyenne</option>
+                            <option value="high">Haute</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date limite</label>
+                        <input type="date" id="cardDueDate">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Étiquettes</label>
+                    <div class="tag-input-wrapper">
+                        <input type="text" id="tagInput" placeholder="Ajouter une étiquette">
+                        <button type="button" class="add-tag-btn" onclick="addTag()">Ajouter</button>
+                    </div>
+                    <div class="tag-input-container" id="tagContainer"></div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="save-btn">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDTU5sxQl38nFGMJ_dOVcm6wTqfgdDN3jI",
+            authDomain: "cyrielle-trell.firebaseapp.com",
+            projectId: "cyrielle-trell",
+            storageBucket: "cyrielle-trell.firebasestorage.app",
+            messagingSenderId: "52211982668",
+            appId: "1:52211982668:web:0859414c6c92b7fe3defe9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentBoard = '';
+        let editingCard = null;
+        let currentTags = [];
+
+        window.currentBoard = currentBoard;
+        window.editingCard = editingCard;
+        window.currentTags = currentTags;
+
+        // Écouter les changements en temps réel pour chaque board
+        ['pro', 'perso', 'urgent'].forEach(board => {
+            const q = query(collection(db, board), orderBy('createdAt', 'desc'));
+            onSnapshot(q, (snapshot) => {
+                renderBoard(board, snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })));
+            });
+        });
+
+        function renderBoard(board, cards) {
+            const container = document.querySelector(`.cards[data-board="${board}"]`);
+            const countElement = document.querySelector(`.board[data-board="${board}"] .card-count`);
+            
+            if (cards.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">Aucune tâche</div>';
+                countElement.textContent = '0';
+            } else {
+                container.innerHTML = cards.map(card => createCardHTML(card, board)).join('');
+                countElement.textContent = cards.length;
+            }
+
+            updateStats();
+            addDragAndDropEvents();
+        }
+
+        function createCardHTML(card, board) {
+            const priorityClass = `priority-${card.priority}`;
+            const priorityText = {
+                low: 'Basse',
+                medium: 'Moyenne',
+                high: 'Haute'
+            };
+
+            const cardObj = JSON.stringify(card).replace(/"/g, '&quot;');
+
+            return `
+                <div class="card" draggable="true" data-id="${card.id}" data-board="${board}">
+                    <div class="card-header">
+                        <h3>${card.title}</h3>
+                        <span class="card-priority ${priorityClass}">${priorityText[card.priority]}</span>
+                    </div>
+                    ${card.description ? `<p>${card.description}</p>` : ''}
+                    ${card.dueDate ? `
+                        <div class="card-meta">
+                            <div class="meta-item">📅 ${formatDate(card.dueDate)}</div>
+                        </div>
+                    ` : ''}
+                    ${card.tags && card.tags.length > 0 ? `
+                        <div class="card-tags">
+                            ${card.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    <div class="card-actions">
+                        <button class="action-btn edit-btn" onclick="window.openModalWithCard('${board}', ${cardObj})">Modifier</button>
+                        <button class="action-btn delete-btn" onclick="window.deleteCard('${board}', '${card.id}')">Supprimer</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatDate(dateString) {
+            const options = { day: 'numeric', month: 'short' };
+            return new Date(dateString).toLocaleDateString('fr-FR', options);
+        }
+
+        function updateStats() {
+            const allCards = document.querySelectorAll('.card');
+            document.getElementById('totalTasks').textContent = allCards.length;
+        }
+
+        window.openModal = function(board) {
+            window.currentBoard = board;
+            window.editingCard = null;
+            window.currentTags = [];
+            
+            document.getElementById('modalTitle').textContent = 'Nouvelle tâche';
+            document.getElementById('cardTitle').value = '';
+            document.getElementById('cardDescription').value = '';
+            document.getElementById('cardPriority').value = 'medium';
+            document.getElementById('cardDueDate').value = '';
+            
+            renderTags();
+            document.getElementById('cardModal').classList.add('active');
+            document.getElementById('cardTitle').focus();
+        };
+
+        window.openModalWithCard = function(board, card) {
+            window.currentBoard = board;
+            window.editingCard = card;
+            window.currentTags = card.tags ? [...card.tags] : [];
+            
+            document.getElementById('modalTitle').textContent = 'Modifier la tâche';
+            document.getElementById('cardTitle').value = card.title;
+            document.getElementById('cardDescription').value = card.description || '';
+            document.getElementById('cardPriority').value = card.priority;
+            document.getElementById('cardDueDate').value = card.dueDate || '';
+            
+            renderTags();
+            document.getElementById('cardModal').classList.add('active');
+            document.getElementById('cardTitle').focus();
+        };
+
+        window.closeModal = function() {
+            document.getElementById('cardModal').classList.remove('active');
+            document.getElementById('cardForm').reset();
+            window.currentTags = [];
+            window.editingCard = null;
+        };
+
+        window.addTag = function() {
+            const input = document.getElementById('tagInput');
+            const tag = input.value.trim();
+            
+            if (tag && !window.currentTags.includes(tag)) {
+                window.currentTags.push(tag);
+                renderTags();
+                input.value = '';
+            }
+        };
+
+        window.removeTag = function(tag) {
+            window.currentTags = window.currentTags.filter(t => t !== tag);
+            renderTags();
+        };
+
+        function renderTags() {
+            const container = document.getElementById('tagContainer');
+            container.innerHTML = window.currentTags.map(tag => `
+                <span class="tag">
+                    ${tag}
+                    <span style="cursor: pointer; margin-left: 8px; font-weight: bold;" onclick="window.removeTag('${tag}')">×</span>
+                </span>
+            `).join('');
+        }
+
+        document.getElementById('cardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cardData = {
+                title: document.getElementById('cardTitle').value.trim(),
+                description: document.getElementById('cardDescription').value.trim(),
+                priority: document.getElementById('cardPriority').value,
+                dueDate: document.getElementById('cardDueDate').value,
+                tags: [...window.currentTags],
+                createdAt: window.editingCard ? window.editingCard.createdAt : new Date().toISOString()
+            };
+
+            try {
+                if (window.editingCard) {
+                    await updateDoc(doc(db, window.currentBoard, window.editingCard.id), cardData);
+                } else {
+                    await addDoc(collection(db, window.currentBoard), cardData);
+                }
+                window.closeModal();
+            } catch (error) {
+                console.error("Erreur:", error);
+                alert("Erreur lors de l'enregistrement de la tâche");
+            }
+        });
+
+        window.deleteCard = async function(board, id) {
+            if (confirm('Êtes-vous sûre de vouloir supprimer cette tâche ?')) {
+                try {
+                    await deleteDoc(doc(db, board, id));
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Erreur lors de la suppression");
+                }
+            }
+        };
+
+        // Drag and Drop
+        let draggedCard = null;
+
+        function addDragAndDropEvents() {
+            const cardElements = document.querySelectorAll('.card');
+            const containers = document.querySelectorAll('.cards');
+
+            cardElements.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedCard = card;
+                    card.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                });
+            });
+
+            containers.forEach(container => {
+                container.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    if (afterElement == null) {
+                        container.appendChild(draggedCard);
+                    } else {
+                        container.insertBefore(draggedCard, afterElement);
+                    }
+                });
+
+                container.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    const newBoard = container.dataset.board;
+                    const oldBoard = draggedCard.dataset.board;
+                    const cardId = draggedCard.dataset.id;
+
+                    if (oldBoard !== newBoard) {
+                        try {
+                            const oldDocRef = doc(db, oldBoard, cardId);
+                            const oldDocSnap = await getDoc(oldDocRef);
+                            
+                            if (oldDocSnap.exists()) {
+                                const cardData = oldDocSnap.data();
+                                await addDoc(collection(db, newBoard), cardData);
+                                await deleteDoc(oldDocRef);
+                            }
+                        } catch (error) {
+                            console.error("Erreur lors du déplacement:", error);
+                        }
+                    }
+                });
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.card:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            const allCards = document.querySelectorAll('.card');
+
+            allCards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p')?.textContent.toLowerCase() || '';
+                
+                if (title.includes(search) || description.includes(search)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        document.getElementById('cardModal').addEventListener('click', (e) => {
+            if (e.target.id === 'cardModal') {
+                window.closeModal();
+            }
+        });
+
+        document.getElementById('tagInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                window.addTag();
+            }
+        });
+    </script>
+</body>
+</html>
