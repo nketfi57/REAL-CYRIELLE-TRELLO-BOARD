@@ -706,6 +706,16 @@
             font-size: 1.2em;
         }
 
+        .error-message {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin: 20px;
+            text-align: center;
+            border: 2px solid #FFCDD2;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 3em;
@@ -862,8 +872,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDTU5sxQl38nFGMJ_dOVcm6wTqfgdDN3jI",
@@ -874,32 +884,56 @@
             appId: "1:52211982668:web:0859414c6c92b7fe3defe9"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
+        let db;
         let currentBoard = '';
         let editingCard = null;
         let currentTags = [];
 
-        window.currentBoard = currentBoard;
-        window.editingCard = editingCard;
-        window.currentTags = currentTags;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase initialisé avec succès");
 
-        // Écouter les changements en temps réel pour chaque board
-        ['pro', 'perso', 'urgent'].forEach(board => {
-            const q = query(collection(db, board), orderBy('createdAt', 'desc'));
-            onSnapshot(q, (snapshot) => {
-                renderBoard(board, snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })));
+            // Écouter les changements en temps réel pour chaque board
+            ['pro', 'perso', 'urgent'].forEach(board => {
+                try {
+                    const q = query(collection(db, board), orderBy('createdAt', 'desc'));
+                    onSnapshot(q, (snapshot) => {
+                        const cards = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        renderBoard(board, cards);
+                    }, (error) => {
+                        console.error(`Erreur lors de l'écoute de ${board}:`, error);
+                        showError(board, `Erreur de connexion à ${board}`);
+                    });
+                } catch (error) {
+                    console.error(`Erreur configuration listener ${board}:`, error);
+                    showError(board, "Erreur de configuration");
+                }
             });
-        });
+        } catch (error) {
+            console.error("Erreur initialisation Firebase:", error);
+            ['pro', 'perso', 'urgent'].forEach(board => {
+                showError(board, "Erreur de connexion Firebase");
+            });
+        }
+
+        function showError(board, message) {
+            const container = document.querySelector(`.cards[data-board="${board}"]`);
+            container.innerHTML = `<div class="error-message">${message}</div>`;
+        }
 
         function renderBoard(board, cards) {
             const container = document.querySelector(`.cards[data-board="${board}"]`);
             const countElement = document.querySelector(`.board[data-board="${board}"] .card-count`);
             
+            if (!container) {
+                console.error(`Container non trouvé pour ${board}`);
+                return;
+            }
+
             if (cards.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">Aucune tâche</div>';
                 countElement.textContent = '0';
@@ -920,15 +954,15 @@
                 high: 'Haute'
             };
 
-            const cardObj = JSON.stringify(card).replace(/"/g, '&quot;');
+            const cardObj = JSON.stringify(card).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
             return `
                 <div class="card" draggable="true" data-id="${card.id}" data-board="${board}">
                     <div class="card-header">
-                        <h3>${card.title}</h3>
+                        <h3>${escapeHtml(card.title)}</h3>
                         <span class="card-priority ${priorityClass}">${priorityText[card.priority]}</span>
                     </div>
-                    ${card.description ? `<p>${card.description}</p>` : ''}
+                    ${card.description ? `<p>${escapeHtml(card.description)}</p>` : ''}
                     ${card.dueDate ? `
                         <div class="card-meta">
                             <div class="meta-item">📅 ${formatDate(card.dueDate)}</div>
@@ -936,7 +970,7 @@
                     ` : ''}
                     ${card.tags && card.tags.length > 0 ? `
                         <div class="card-tags">
-                            ${card.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            ${card.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
                         </div>
                     ` : ''}
                     <div class="card-actions">
@@ -945,6 +979,12 @@
                     </div>
                 </div>
             `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function formatDate(dateString) {
@@ -958,9 +998,9 @@
         }
 
         window.openModal = function(board) {
-            window.currentBoard = board;
-            window.editingCard = null;
-            window.currentTags = [];
+            currentBoard = board;
+            editingCard = null;
+            currentTags = [];
             
             document.getElementById('modalTitle').textContent = 'Nouvelle tâche';
             document.getElementById('cardTitle').value = '';
@@ -974,9 +1014,9 @@
         };
 
         window.openModalWithCard = function(board, card) {
-            window.currentBoard = board;
-            window.editingCard = card;
-            window.currentTags = card.tags ? [...card.tags] : [];
+            currentBoard = board;
+            editingCard = card;
+            currentTags = card.tags ? [...card.tags] : [];
             
             document.getElementById('modalTitle').textContent = 'Modifier la tâche';
             document.getElementById('cardTitle').value = card.title;
@@ -992,32 +1032,32 @@
         window.closeModal = function() {
             document.getElementById('cardModal').classList.remove('active');
             document.getElementById('cardForm').reset();
-            window.currentTags = [];
-            window.editingCard = null;
+            currentTags = [];
+            editingCard = null;
         };
 
         window.addTag = function() {
             const input = document.getElementById('tagInput');
             const tag = input.value.trim();
             
-            if (tag && !window.currentTags.includes(tag)) {
-                window.currentTags.push(tag);
+            if (tag && !currentTags.includes(tag)) {
+                currentTags.push(tag);
                 renderTags();
                 input.value = '';
             }
         };
 
         window.removeTag = function(tag) {
-            window.currentTags = window.currentTags.filter(t => t !== tag);
+            currentTags = currentTags.filter(t => t !== tag);
             renderTags();
         };
 
         function renderTags() {
             const container = document.getElementById('tagContainer');
-            container.innerHTML = window.currentTags.map(tag => `
+            container.innerHTML = currentTags.map(tag => `
                 <span class="tag">
-                    ${tag}
-                    <span style="cursor: pointer; margin-left: 8px; font-weight: bold;" onclick="window.removeTag('${tag}')">×</span>
+                    ${escapeHtml(tag)}
+                    <span style="cursor: pointer; margin-left: 8px; font-weight: bold;" onclick="window.removeTag('${escapeHtml(tag)}')">×</span>
                 </span>
             `).join('');
         }
@@ -1030,20 +1070,20 @@
                 description: document.getElementById('cardDescription').value.trim(),
                 priority: document.getElementById('cardPriority').value,
                 dueDate: document.getElementById('cardDueDate').value,
-                tags: [...window.currentTags],
-                createdAt: window.editingCard ? window.editingCard.createdAt : new Date().toISOString()
+                tags: [...currentTags],
+                createdAt: editingCard ? editingCard.createdAt : new Date().toISOString()
             };
 
             try {
-                if (window.editingCard) {
-                    await updateDoc(doc(db, window.currentBoard, window.editingCard.id), cardData);
+                if (editingCard) {
+                    await updateDoc(doc(db, currentBoard, editingCard.id), cardData);
                 } else {
-                    await addDoc(collection(db, window.currentBoard), cardData);
+                    await addDoc(collection(db, currentBoard), cardData);
                 }
                 window.closeModal();
             } catch (error) {
                 console.error("Erreur:", error);
-                alert("Erreur lors de l'enregistrement de la tâche");
+                alert("Erreur lors de l'enregistrement de la tâche. Vérifiez votre connexion.");
             }
         });
 
@@ -1106,6 +1146,7 @@
                             }
                         } catch (error) {
                             console.error("Erreur lors du déplacement:", error);
+                            alert("Erreur lors du déplacement de la tâche");
                         }
                     }
                 });
