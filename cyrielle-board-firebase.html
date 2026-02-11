@@ -940,8 +940,6 @@
                 high: 'Haute'
             };
 
-            const cardObj = JSON.stringify(card).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
             return `
                 <div class="card" draggable="true" data-id="${card.id}" data-board="${board}">
                     <div class="card-header">
@@ -960,7 +958,7 @@
                         </div>
                     ` : ''}
                     <div class="card-actions">
-                        <button class="action-btn edit-btn" onclick="window.openModalWithCard('${board}', ${cardObj})">Modifier</button>
+                        <button class="action-btn edit-btn" onclick="window.editCardById('${board}', '${card.id}')">Modifier</button>
                         <button class="action-btn delete-btn" onclick="window.deleteCard('${board}', '${card.id}')">Supprimer</button>
                     </div>
                 </div>
@@ -1013,6 +1011,21 @@
             renderTags();
             document.getElementById('cardModal').classList.add('active');
             document.getElementById('cardTitle').focus();
+        };
+
+        // ✅ NOUVELLE FONCTION pour éditer par ID
+        window.editCardById = async function(board, cardId) {
+            try {
+                const docRef = doc(db, board, cardId);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const card = { id: docSnap.id, ...docSnap.data() };
+                    window.openModalWithCard(board, card);
+                }
+            } catch (error) {
+                console.error("Erreur:", error);
+            }
         };
 
         window.closeModal = function() {
