@@ -864,7 +864,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDTU5sxQl38nFGMJ_dOVcm6wTqfgdDN3jI",
@@ -879,6 +879,7 @@
         let currentBoard = '';
         let editingCard = null;
         let currentTags = [];
+        let isMovingCard = false; // ✅ Flag pour éviter les duplications
 
         try {
             const app = initializeApp(firebaseConfig);
@@ -1013,7 +1014,6 @@
             document.getElementById('cardTitle').focus();
         };
 
-        // ✅ NOUVELLE FONCTION pour éditer par ID
         window.editCardById = async function(board, cardId) {
             try {
                 const docRef = doc(db, board, cardId);
@@ -1097,18 +1097,33 @@
             }
         };
 
-        // Drag and Drop
+        // ✅ Drag and Drop CORRIGÉ - sans duplication
         let draggedCard = null;
+        let draggedCardData = null;
 
         function addDragAndDropEvents() {
             const cardElements = document.querySelectorAll('.card');
             const containers = document.querySelectorAll('.cards');
 
             cardElements.forEach(card => {
-                card.addEventListener('dragstart', (e) => {
+                card.addEventListener('dragstart', async (e) => {
                     draggedCard = card;
                     card.classList.add('dragging');
                     e.dataTransfer.effectAllowed = 'move';
+
+                    // ✅ Récupérer les données de la carte depuis Firebase
+                    const cardId = card.dataset.id;
+                    const board = card.dataset.board;
+                    
+                    try {
+                        const docRef = doc(db, board, cardId);
+                        const docSnap = await getDoc(docRef);
+                        if (docSnap.exists()) {
+                            draggedCardData = docSnap.data();
+                        }
+                    } catch (error) {
+                        console.error("Erreur récupération données:", error);
+                    }
                 });
 
                 card.addEventListener('dragend', () => {
@@ -1120,32 +1135,48 @@
                 container.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     const afterElement = getDragAfterElement(container, e.clientY);
-                    if (afterElement == null) {
+                    if (draggedCard && afterElement == null) {
                         container.appendChild(draggedCard);
-                    } else {
+                    } else if (draggedCard) {
                         container.insertBefore(draggedCard, afterElement);
                     }
                 });
 
                 container.addEventListener('drop', async (e) => {
                     e.preventDefault();
+                    
+                    // ✅ Éviter les déplacements multiples simultanés
+                    if (isMovingCard) return;
+                    
                     const newBoard = container.dataset.board;
                     const oldBoard = draggedCard.dataset.board;
                     const cardId = draggedCard.dataset.id;
 
-                    if (oldBoard !== newBoard) {
+                    if (oldBoard !== newBoard && draggedCardData) {
+                        isMovingCard = true; // ✅ Verrouiller
+                        
                         try {
-                            const oldDocRef = doc(db, oldBoard, cardId);
-                            const oldDocSnap = await getDoc(oldDocRef);
+                            // ✅ Utiliser un batch pour garantir l'atomicité
+                            const batch = writeBatch(db);
                             
-                            if (oldDocSnap.exists()) {
-                                const cardData = oldDocSnap.data();
-                                await addDoc(collection(db, newBoard), cardData);
-                                await deleteDoc(oldDocRef);
-                            }
+                            // Ajouter dans le nouveau board
+                            const newDocRef = doc(collection(db, newBoard));
+                            batch.set(newDocRef, draggedCardData);
+                            
+                            // Supprimer de l'ancien board
+                            const oldDocRef = doc(db, oldBoard, cardId);
+                            batch.delete(oldDocRef);
+                            
+                            // ✅ Exécuter en une seule transaction
+                            await batch.commit();
+                            
+                            console.log(`✅ Tâche déplacée de ${oldBoard} vers ${newBoard}`);
                         } catch (error) {
                             console.error("Erreur lors du déplacement:", error);
                             alert("Erreur lors du déplacement de la tâche");
+                        } finally {
+                            isMovingCard = false; // ✅ Déverrouiller
+                            draggedCardData = null;
                         }
                     }
                 });
