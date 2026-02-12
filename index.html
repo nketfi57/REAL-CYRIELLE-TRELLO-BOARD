@@ -194,7 +194,13 @@
         .toast-icon {
             font-size: 28px;
             flex-shrink: 0;
-            filter: drop-shadow(0 2px 8px rgba(255, 105, 180, 0.3));
+            filter: drop-shadow(0 2px 8px rgba(255, 105, 180, 0.4));
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         .toast-content {
@@ -1059,7 +1065,7 @@
 
     <div class="footer">
         <div class="footer-content">
-            <span class="footer-sparkle">✨</span> Fait Par Nassim Ketfi - Meilleur Stagiaire <span class="footer-sparkle">✨</span>
+            <span class="footer-sparkle">✨</span> Fait Par Nassim Ketfi - Stagiaire (le meilleur) <span class="footer-sparkle">✨</span>
         </div>
     </div>
 
@@ -1089,10 +1095,10 @@
             toast.className = `toast ${type}`;
             
             const icons = {
-                success: '✅',
-                error: '❌',
-                info: 'ℹ️',
-                warning: '⚠️'
+                success: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="url(#grad-success)"/><path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="grad-success" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF69B4"/><stop offset="100%" style="stop-color:#FFB6D9"/></linearGradient></defs></svg>',
+                error: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="url(#grad-error)"/><path d="M15 9l-6 6m0-6l6 6" stroke="white" stroke-width="2.5" stroke-linecap="round"/><defs><linearGradient id="grad-error" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF1493"/><stop offset="100%" style="stop-color:#C71585"/></linearGradient></defs></svg>',
+                info: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="url(#grad-info)"/><path d="M12 16v-4m0-4h.01" stroke="white" stroke-width="2.5" stroke-linecap="round"/><defs><linearGradient id="grad-info" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FFB6D9"/><stop offset="100%" style="stop-color:#FF69B4"/></linearGradient></defs></svg>',
+                warning: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 20h20L12 2z" fill="url(#grad-warning)"/><path d="M12 9v4m0 4h.01" stroke="white" stroke-width="2.5" stroke-linecap="round"/><defs><linearGradient id="grad-warning" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF69B4"/><stop offset="100%" style="stop-color:#FF1493"/></linearGradient></defs></svg>'
             };
 
             toast.innerHTML = `
@@ -1309,10 +1315,10 @@
             try {
                 if (editingCard) {
                     await updateDoc(doc(db, currentBoard, editingCard.id), cardData);
-                    showToast('Tâche modifiée', 'Vos modifications ont été enregistrées ! ✨', 'success');
+                    showToast('Tâche modifiée', 'Vos modifications ont été enregistrées ! 💖', 'success');
                 } else {
                     await addDoc(collection(db, currentBoard), cardData);
-                    showToast('Tâche créée', 'Nouvelle tâche ajoutée avec succès ! 🎉', 'success');
+                    showToast('Tâche créée', 'Nouvelle tâche ajoutée avec succès ! 💕', 'success');
                 }
                 window.closeModal();
             } catch (error) {
@@ -1405,7 +1411,7 @@
                                 urgent: 'Urgent'
                             };
                             
-                            showToast('Tâche déplacée', `Déplacée vers ${boardNames[newBoard]} 🚀`, 'success');
+                            showToast('Tâche déplacée', `Déplacée vers ${boardNames[newBoard]} 💖`, 'success');
                         } catch (error) {
                             console.error("Erreur lors du déplacement:", error);
                             showToast('Erreur', 'Impossible de déplacer la tâche', 'error');
