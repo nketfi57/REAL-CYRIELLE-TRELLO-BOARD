@@ -11,6 +11,15 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23FF69B4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>'), auto;
+        }
+
+        a, button, .card, .action-btn, .add-card-btn, .modal-actions button {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%23FF1493" stroke="%23FF1493" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>'), pointer !important;
+        }
+
+        input, textarea, select {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23FF69B4" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'), text !important;
         }
 
         :root {
@@ -31,6 +40,7 @@
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
+            padding-bottom: 100px;
         }
 
         body::before,
@@ -97,6 +107,178 @@
         @keyframes shimmer {
             0% { background-position: -1000px 0; }
             100% { background-position: 1000px 0; }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(255, 105, 180, 0.3);
+            border: 2px solid rgba(255, 105, 180, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 320px;
+            max-width: 400px;
+            pointer-events: all;
+            animation: toastSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: linear-gradient(135deg, var(--rose-primaire), var(--rose-accent));
+        }
+
+        .toast.success::before {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .toast.error::before {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+
+        .toast.info::before {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+        }
+
+        .toast.hiding {
+            animation: toastSlideOut 0.4s ease-in forwards;
+        }
+
+        .toast-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 700;
+            font-size: 1em;
+            margin-bottom: 5px;
+            color: var(--gris-texte);
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .toast-close:hover {
+            background: rgba(255, 105, 180, 0.1);
+            color: var(--rose-accent);
+            transform: rotate(90deg);
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--rose-primaire), var(--rose-accent));
+            animation: toastProgress 5s linear forwards;
+        }
+
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-top: 2px solid rgba(255, 105, 180, 0.2);
+            padding: 20px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 -5px 30px rgba(255, 105, 180, 0.15);
+        }
+
+        .footer-content {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #FF69B4, #FF1493, #C71585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-sparkle {
+            display: inline-block;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.3) rotate(180deg); opacity: 0.7; }
         }
 
         .container {
@@ -317,7 +499,6 @@
             color: white;
             border: none;
             border-radius: 15px;
-            cursor: pointer;
             font-family: 'Poppins', sans-serif;
             font-size: 1em;
             font-weight: 600;
@@ -366,7 +547,6 @@
             padding: 22px;
             border-radius: 18px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
-            cursor: grab;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             border-left: 5px solid var(--rose-primaire);
@@ -392,10 +572,6 @@
         .card:hover {
             transform: translateX(8px);
             box-shadow: 0 10px 35px rgba(255, 105, 180, 0.2);
-        }
-
-        .card:active {
-            cursor: grabbing;
         }
 
         .card.dragging {
@@ -495,7 +671,6 @@
             padding: 10px;
             border: none;
             border-radius: 12px;
-            cursor: pointer;
             font-family: 'Poppins', sans-serif;
             font-size: 0.85em;
             font-weight: 600;
@@ -641,7 +816,6 @@
             color: var(--rose-accent);
             border: none;
             border-radius: 15px;
-            cursor: pointer;
             font-weight: 700;
             transition: all 0.3s ease;
             white-space: nowrap;
@@ -675,7 +849,6 @@
             font-family: 'Poppins', sans-serif;
             font-size: 1.05em;
             font-weight: 700;
-            cursor: pointer;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -743,10 +916,22 @@
             .modal-content {
                 padding: 30px;
             }
+
+            .toast-container {
+                right: 10px;
+                left: 10px;
+                top: 20px;
+            }
+
+            .toast {
+                min-width: auto;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="toast-container" id="toastContainer"></div>
+
     <div class="container">
         <div class="header">
             <h1>Cyrielle</h1>
@@ -862,6 +1047,12 @@
         </div>
     </div>
 
+    <div class="footer">
+        <div class="footer-content">
+            <span class="footer-sparkle">✨</span> Fait Par Nassim Ketfi - Meilleur Stagiaire <span class="footer-sparkle">✨</span>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -879,19 +1070,49 @@
         let currentBoard = '';
         let editingCard = null;
         let currentTags = [];
-        let isMovingCard = false; // ✅ Flag pour éviter les duplications
+        let isMovingCard = false;
+
+        // Toast Notification System
+        window.showToast = function(title, message, type = 'success', duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.success}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+                <div class="toast-progress"></div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 400);
+            }, duration);
+        };
 
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             console.log("✅ Firebase initialisé avec succès");
+            showToast('Connexion réussie', 'Votre board est prêt ! 💖', 'success');
 
-            // Initialiser les boards vides immédiatement
             ['pro', 'perso', 'urgent'].forEach(board => {
                 renderBoard(board, []);
             });
 
-            // Écouter les changements en temps réel pour chaque board
             ['pro', 'perso', 'urgent'].forEach(board => {
                 try {
                     const q = query(collection(db, board), orderBy('createdAt', 'desc'));
@@ -910,6 +1131,7 @@
             });
         } catch (error) {
             console.error("❌ Erreur initialisation Firebase:", error);
+            showToast('Erreur de connexion', 'Impossible de se connecter à Firebase', 'error');
         }
 
         function renderBoard(board, cards) {
@@ -1025,6 +1247,7 @@
                 }
             } catch (error) {
                 console.error("Erreur:", error);
+                showToast('Erreur', 'Impossible de charger la tâche', 'error');
             }
         };
 
@@ -1076,13 +1299,15 @@
             try {
                 if (editingCard) {
                     await updateDoc(doc(db, currentBoard, editingCard.id), cardData);
+                    showToast('Tâche modifiée', 'Vos modifications ont été enregistrées ! ✨', 'success');
                 } else {
                     await addDoc(collection(db, currentBoard), cardData);
+                    showToast('Tâche créée', 'Nouvelle tâche ajoutée avec succès ! 🎉', 'success');
                 }
                 window.closeModal();
             } catch (error) {
                 console.error("Erreur:", error);
-                alert("Erreur lors de l'enregistrement de la tâche. Vérifiez votre connexion.");
+                showToast('Erreur', 'Impossible d\'enregistrer la tâche', 'error');
             }
         });
 
@@ -1090,14 +1315,14 @@
             if (confirm('Êtes-vous sûre de vouloir supprimer cette tâche ?')) {
                 try {
                     await deleteDoc(doc(db, board, id));
+                    showToast('Tâche supprimée', 'La tâche a été supprimée', 'info');
                 } catch (error) {
                     console.error("Erreur:", error);
-                    alert("Erreur lors de la suppression");
+                    showToast('Erreur', 'Impossible de supprimer la tâche', 'error');
                 }
             }
         };
 
-        // ✅ Drag and Drop CORRIGÉ - sans duplication
         let draggedCard = null;
         let draggedCardData = null;
 
@@ -1111,7 +1336,6 @@
                     card.classList.add('dragging');
                     e.dataTransfer.effectAllowed = 'move';
 
-                    // ✅ Récupérer les données de la carte depuis Firebase
                     const cardId = card.dataset.id;
                     const board = card.dataset.board;
                     
@@ -1145,7 +1369,6 @@
                 container.addEventListener('drop', async (e) => {
                     e.preventDefault();
                     
-                    // ✅ Éviter les déplacements multiples simultanés
                     if (isMovingCard) return;
                     
                     const newBoard = container.dataset.board;
@@ -1153,29 +1376,31 @@
                     const cardId = draggedCard.dataset.id;
 
                     if (oldBoard !== newBoard && draggedCardData) {
-                        isMovingCard = true; // ✅ Verrouiller
+                        isMovingCard = true;
                         
                         try {
-                            // ✅ Utiliser un batch pour garantir l'atomicité
                             const batch = writeBatch(db);
                             
-                            // Ajouter dans le nouveau board
                             const newDocRef = doc(collection(db, newBoard));
                             batch.set(newDocRef, draggedCardData);
                             
-                            // Supprimer de l'ancien board
                             const oldDocRef = doc(db, oldBoard, cardId);
                             batch.delete(oldDocRef);
                             
-                            // ✅ Exécuter en une seule transaction
                             await batch.commit();
                             
-                            console.log(`✅ Tâche déplacée de ${oldBoard} vers ${newBoard}`);
+                            const boardNames = {
+                                pro: 'Professionnel',
+                                perso: 'Personnel',
+                                urgent: 'Urgent'
+                            };
+                            
+                            showToast('Tâche déplacée', `Déplacée vers ${boardNames[newBoard]} 🚀`, 'success');
                         } catch (error) {
                             console.error("Erreur lors du déplacement:", error);
-                            alert("Erreur lors du déplacement de la tâche");
+                            showToast('Erreur', 'Impossible de déplacer la tâche', 'error');
                         } finally {
-                            isMovingCard = false; // ✅ Déverrouiller
+                            isMovingCard = false;
                             draggedCardData = null;
                         }
                     }
