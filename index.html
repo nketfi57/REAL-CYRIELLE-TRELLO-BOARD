@@ -181,6 +181,10 @@
             background: linear-gradient(135deg, var(--rose-primaire), var(--rose-accent));
         }
 
+        .toast.error::before {
+            background: linear-gradient(135deg, #e53935, #c62828);
+        }
+
         @keyframes toastSlideIn {
             from { opacity: 0; transform: translateX(400px); }
             to { opacity: 1; transform: translateX(0); }
@@ -204,6 +208,13 @@
             font-size: 1em;
             margin-bottom: 5px;
             background: linear-gradient(135deg, var(--rose-accent), var(--rose-fonce));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .toast.error .toast-title {
+            background: linear-gradient(135deg, #e53935, #c62828);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1271,6 +1282,18 @@
             font-size: 0.95em;
         }
 
+        /* Badge "sauvegarde locale" */
+        .local-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FFF9E6, #FFE6B3);
+            color: #E65100;
+            font-size: 0.75em;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -1485,10 +1508,10 @@
         </div>
 
         <div class="view-switcher">
-            <button class="view-btn active" onclick="switchView('board')">Tableau</button>
-            <button class="view-btn" onclick="switchView('calendar')">Calendrier</button>
-            <button class="view-btn" onclick="switchView('todo')">To-Do List</button>
-            <button class="view-btn" onclick="switchView('notes')">Notes</button>
+            <button class="view-btn active" onclick="switchView('board', this)">Tableau</button>
+            <button class="view-btn" onclick="switchView('calendar', this)">Calendrier</button>
+            <button class="view-btn" onclick="switchView('todo', this)">To-Do List</button>
+            <button class="view-btn" onclick="switchView('notes', this)">Notes</button>
         </div>
 
         <div class="controls">
@@ -1555,6 +1578,7 @@
         </div>
     </div>
 
+    <!-- Modals -->
     <div class="modal" id="cardModal">
         <div class="modal-content">
             <h2 id="modalTitle">Nouvelle tâche</h2>
@@ -1563,12 +1587,10 @@
                     <label>Titre</label>
                     <input type="text" id="cardTitle" placeholder="Titre de la tâche" required>
                 </div>
-                
                 <div class="form-group">
                     <label>Description</label>
                     <textarea id="cardDescription" placeholder="Décrivez votre tâche..."></textarea>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>Priorité</label>
@@ -1578,15 +1600,12 @@
                             <option value="high">Haute</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label>Date limite</label>
                         <input type="date" id="cardDueDate">
                     </div>
                 </div>
-
                 <input type="hidden" id="cardBoard">
-
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn" onclick="closeModal()">Annuler</button>
                     <button type="submit" class="save-btn">Enregistrer</button>
@@ -1603,7 +1622,6 @@
                     <label>Nom de la colonne</label>
                     <input type="text" id="boardName" placeholder="Ex: En cours, Terminé..." required>
                 </div>
-
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn" onclick="closeBoardModal()">Annuler</button>
                     <button type="submit" class="save-btn">Créer</button>
@@ -1620,12 +1638,10 @@
                     <label>Titre</label>
                     <input type="text" id="noteTitle" placeholder="Titre de la note" required>
                 </div>
-                
                 <div class="form-group">
                     <label>Contenu</label>
                     <textarea id="noteContent" placeholder="Écrivez votre note ici..." style="min-height: 300px;"></textarea>
                 </div>
-
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn" onclick="closeNoteModal()">Annuler</button>
                     <button type="submit" class="save-btn">Enregistrer</button>
@@ -1642,7 +1658,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { 
+            getFirestore, collection, addDoc, updateDoc, deleteDoc, 
+            doc, onSnapshot, query, orderBy, getDoc, writeBatch, getDocs 
+        } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDTU5sxQl38nFGMJ_dOVcm6wTqfgdDN3jI",
@@ -1664,10 +1683,10 @@
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
 
+        // ─── THEME ────────────────────────────────────────────────────────────
         window.toggleTheme = function() {
             const body = document.body;
             const icon = document.getElementById('themeIcon');
-            
             if (body.classList.contains('dark-mode')) {
                 body.classList.remove('dark-mode');
                 icon.textContent = 'Mode Sombre';
@@ -1685,11 +1704,11 @@
             document.getElementById('themeIcon').textContent = 'Mode Clair';
         }
 
+        // ─── TOAST ────────────────────────────────────────────────────────────
         window.showToast = function(title, message, type = 'success', duration = 5000) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-
             toast.innerHTML = `
                 <div class="toast-content">
                     <div class="toast-title">${title}</div>
@@ -1697,26 +1716,23 @@
                 </div>
                 <button class="toast-close" onclick="this.parentElement.remove()">×</button>
             `;
-
             container.appendChild(toast);
-
             setTimeout(() => {
                 toast.classList.add('hiding');
                 setTimeout(() => toast.remove(), 400);
             }, duration);
         };
 
-        window.switchView = function(view) {
+        // ─── VIEW SWITCHER ────────────────────────────────────────────────────
+        window.switchView = function(view, btnEl) {
             currentView = view;
-            
             document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            
-            document.getElementById('boardView').style.display = 'none';
-            document.getElementById('calendarView').style.display = 'none';
-            document.getElementById('todoView').style.display = 'none';
-            document.getElementById('notesView').style.display = 'none';
-            
+            if (btnEl) btnEl.classList.add('active');
+
+            ['boardView', 'calendarView', 'todoView', 'notesView'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+
             if (view === 'board') {
                 document.getElementById('boardView').style.display = 'block';
             } else if (view === 'calendar') {
@@ -1731,48 +1747,80 @@
             }
         };
 
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            console.log("Firebase initialisé");
-            showToast('Connexion réussie', 'Votre board est prêt');
+        // ─── NOTES – STOCKAGE LOCAL (FALLBACK FIABLE) ────────────────────────
+        // Les notes sont sauvegardées dans localStorage EN PLUS de Firebase
+        // pour garantir que ça fonctionne même si les règles Firestore bloquent.
 
-            loadBoardsConfig();
-            loadNotes();
-
-        } catch (error) {
-            console.error("Erreur Firebase:", error);
-            showToast('Erreur', 'Impossible de se connecter', 'error');
+        function loadNotesFromLocal() {
+            try {
+                const raw = localStorage.getItem('cyrielle_notes');
+                return raw ? JSON.parse(raw) : [];
+            } catch { return []; }
         }
 
-        function loadNotes() {
-            const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'));
-            onSnapshot(q, (snapshot) => {
-                notes = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                if (currentView === 'notes') {
-                    renderNotes();
-                }
-            });
+        function saveNotesToLocal(notesArr) {
+            try {
+                localStorage.setItem('cyrielle_notes', JSON.stringify(notesArr));
+            } catch (e) {
+                console.error('Erreur localStorage notes:', e);
+            }
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Tentative de chargement Firebase pour les notes, avec fallback localStorage
+        async function loadNotes() {
+            // Charger d'abord depuis localStorage pour affichage immédiat
+            notes = loadNotesFromLocal();
+            if (currentView === 'notes') renderNotes();
+
+            // Essayer de synchroniser avec Firebase
+            try {
+                const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'));
+                onSnapshot(q, (snapshot) => {
+                    const firestoreNotes = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        source: 'firestore',
+                        ...doc.data()
+                    }));
+                    
+                    if (firestoreNotes.length > 0) {
+                        // Fusionner : notes Firestore + notes locales non encore sync
+                        const firestoreIds = new Set(firestoreNotes.map(n => n.id));
+                        const localOnly = notes.filter(n => n.source === 'local' && !firestoreIds.has(n.id));
+                        notes = [...firestoreNotes, ...localOnly]
+                            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    } else if (notes.length === 0) {
+                        notes = [];
+                    }
+                    // Ne pas écraser les notes locales si Firestore est vide mais qu'il y a des notes locales
+                    
+                    saveNotesToLocal(notes);
+                    if (currentView === 'notes') renderNotes();
+                }, (error) => {
+                    console.warn('Firestore notes snapshot error (utilisation locale):', error);
+                    // Garder les notes locales
+                });
+            } catch (error) {
+                console.warn('Firestore notes non disponible, mode local activé:', error);
+            }
         }
 
         function renderNotes() {
             const container = document.getElementById('notesList');
-            
             if (notes.length === 0) {
-                container.innerHTML = '<div class="empty-state">Aucune note</div>';
+                container.innerHTML = '<div class="empty-state">Aucune note pour l\'instant 📝</div>';
                 return;
             }
-            
             container.innerHTML = notes.map(note => `
                 <div class="note-card" onclick="editNote('${note.id}')">
                     <div class="note-card-header">
                         <div class="note-card-title">${escapeHtml(note.title)}</div>
-                        <div class="note-card-date">${formatDate(note.createdAt.split('T')[0])}</div>
+                        <div class="note-card-date">${formatDate(note.createdAt ? note.createdAt.split('T')[0] : new Date().toISOString().split('T')[0])}</div>
                     </div>
-                    <div class="note-card-content">${escapeHtml(note.content)}</div>
+                    <div class="note-card-content">${escapeHtml(note.content || '')}</div>
                     <div class="note-card-actions">
                         <button class="action-btn edit-btn" onclick="event.stopPropagation(); editNote('${note.id}')">Modifier</button>
                         <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteNote('${note.id}')">Supprimer</button>
@@ -1787,28 +1835,33 @@
             document.getElementById('noteTitle').value = '';
             document.getElementById('noteContent').value = '';
             document.getElementById('noteModal').classList.add('active');
+            setTimeout(() => document.getElementById('noteTitle').focus(), 100);
         };
 
-        window.editNote = async function(noteId) {
+        window.editNote = function(noteId) {
             const note = notes.find(n => n.id === noteId);
             if (!note) return;
-            
             editingNote = note;
             document.getElementById('noteModalTitle').textContent = 'Modifier la Note';
             document.getElementById('noteTitle').value = note.title;
-            document.getElementById('noteContent').value = note.content;
+            document.getElementById('noteContent').value = note.content || '';
             document.getElementById('noteModal').classList.add('active');
         };
 
         window.deleteNote = async function(noteId) {
             if (!confirm('Supprimer cette note ?')) return;
             
+            // Suppression locale immédiate
+            notes = notes.filter(n => n.id !== noteId);
+            saveNotesToLocal(notes);
+            renderNotes();
+            showToast('Supprimée', 'Note supprimée avec succès');
+
+            // Tentative suppression Firestore
             try {
                 await deleteDoc(doc(db, 'notes', noteId));
-                showToast('Supprimée', 'Note supprimée');
             } catch (error) {
-                console.error("Erreur:", error);
-                showToast('Erreur', 'Impossible de supprimer', 'error');
+                console.warn('Suppression Firestore échouée (note supprimée localement):', error);
             }
         };
 
@@ -1820,68 +1873,113 @@
 
         document.getElementById('noteForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const noteData = {
-                title: document.getElementById('noteTitle').value.trim(),
-                content: document.getElementById('noteContent').value.trim(),
-                createdAt: editingNote ? editingNote.createdAt : new Date().toISOString()
-            };
 
-            try {
-                if (editingNote) {
-                    await updateDoc(doc(db, 'notes', editingNote.id), noteData);
-                    showToast('Modifiée', 'Note modifiée');
-                } else {
-                    await addDoc(collection(db, 'notes'), noteData);
-                    showToast('Créée', 'Nouvelle note ajoutée');
-                }
+            const titleVal = document.getElementById('noteTitle').value.trim();
+            const contentVal = document.getElementById('noteContent').value.trim();
+
+            if (!titleVal) {
+                showToast('Erreur', 'Le titre est obligatoire', 'error');
+                return;
+            }
+
+            const now = new Date().toISOString();
+
+            if (editingNote) {
+                // ── MODIFICATION ──
+                const updatedNote = {
+                    ...editingNote,
+                    title: titleVal,
+                    content: contentVal,
+                };
+
+                // Mise à jour locale immédiate
+                const idx = notes.findIndex(n => n.id === editingNote.id);
+                if (idx !== -1) notes[idx] = updatedNote;
+                saveNotesToLocal(notes);
+                renderNotes();
                 closeNoteModal();
-            } catch (error) {
-                console.error("Erreur:", error);
-                showToast('Erreur', 'Impossible d\'enregistrer', 'error');
+                showToast('Modifiée ✨', 'Note mise à jour avec succès');
+
+                // Tentative Firestore
+                try {
+                    await updateDoc(doc(db, 'notes', editingNote.id), {
+                        title: titleVal,
+                        content: contentVal,
+                        createdAt: editingNote.createdAt || now
+                    });
+                } catch (error) {
+                    console.warn('Mise à jour Firestore échouée (sauvegarde locale OK):', error);
+                }
+
+            } else {
+                // ── CRÉATION ──
+                const localId = generateId();
+                const newNote = {
+                    id: localId,
+                    source: 'local',
+                    title: titleVal,
+                    content: contentVal,
+                    createdAt: now
+                };
+
+                // Sauvegarde locale immédiate
+                notes.unshift(newNote);
+                saveNotesToLocal(notes);
+                renderNotes();
+                closeNoteModal();
+                showToast('Créée 💖', 'Nouvelle note ajoutée');
+
+                // Tentative Firestore
+                try {
+                    const docRef = await addDoc(collection(db, 'notes'), {
+                        title: titleVal,
+                        content: contentVal,
+                        createdAt: now
+                    });
+                    // Mettre à jour l'ID local avec l'ID Firestore
+                    const idx = notes.findIndex(n => n.id === localId);
+                    if (idx !== -1) {
+                        notes[idx].id = docRef.id;
+                        notes[idx].source = 'firestore';
+                        saveNotesToLocal(notes);
+                    }
+                } catch (error) {
+                    console.warn('Sauvegarde Firestore notes échouée (sauvegarde locale OK):', error);
+                }
             }
         });
 
+        // ─── BOARDS ───────────────────────────────────────────────────────────
         async function loadBoardsConfig() {
             try {
                 const defaultBoards = ['pro', 'perso', 'urgent'];
                 const savedBoards = localStorage.getItem('customBoards');
-                
                 if (savedBoards) {
                     try {
                         boards = JSON.parse(savedBoards);
                         defaultBoards.forEach(b => {
-                            if (!boards.includes(b)) {
-                                boards.unshift(b);
-                            }
+                            if (!boards.includes(b)) boards.unshift(b);
                         });
-                    } catch (e) {
-                        boards = defaultBoards;
-                    }
+                    } catch (e) { boards = defaultBoards; }
                 } else {
                     boards = defaultBoards;
                 }
-                
+
                 boards.forEach(board => {
                     const q = query(collection(db, board), orderBy('createdAt', 'desc'));
                     onSnapshot(q, (snapshot) => {
                         allTasks[board] = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data(),
-                            board: board
+                            id: doc.id, ...doc.data(), board
                         }));
                         renderBoard(board, allTasks[board]);
                         updateStats();
-                        if (currentView === 'todo') {
-                            renderTodoList();
-                        }
+                        if (currentView === 'todo') renderTodoList();
                     }, (error) => {
-                        console.error(`Erreur pour ${board}:`, error);
+                        console.error(`Erreur board ${board}:`, error);
                     });
                 });
 
                 renderBoards();
-                
             } catch (error) {
                 console.error("Erreur chargement boards:", error);
             }
@@ -1890,17 +1988,16 @@
         function renderBoards() {
             const container = document.getElementById('boardsContainer');
             const addBoardBtn = container.querySelector('.add-board-btn');
-            
             container.innerHTML = '';
-            
+
             boards.forEach(boardId => {
                 const boardEl = document.createElement('div');
                 boardEl.className = 'board';
                 boardEl.dataset.board = boardId;
-                
+
                 const boardName = formatBoardName(boardId);
                 const color = getBoardColor(boardId);
-                
+
                 boardEl.innerHTML = `
                     <div class="board-header">
                         <div class="board-header-top">
@@ -1921,25 +2018,26 @@
                         <div class="empty-state">Aucune tâche</div>
                     </div>
                 `;
-                
                 container.appendChild(boardEl);
             });
-            
-            container.appendChild(addBoardBtn);
-            
+
+            if (addBoardBtn) {
+                container.appendChild(addBoardBtn);
+            } else {
+                const newAddBtn = document.createElement('button');
+                newAddBtn.className = 'add-board-btn';
+                newAddBtn.onclick = createNewBoard;
+                newAddBtn.innerHTML = `<div class="add-board-icon">+</div><div>Nouvelle Colonne</div>`;
+                container.appendChild(newAddBtn);
+            }
+
             boards.forEach(board => {
-                if (allTasks[board]) {
-                    renderBoard(board, allTasks[board]);
-                }
+                if (allTasks[board]) renderBoard(board, allTasks[board]);
             });
         }
 
         function formatBoardName(boardId) {
-            const names = {
-                'pro': 'Professionnel',
-                'perso': 'Personnel',
-                'urgent': 'Urgent'
-            };
+            const names = { 'pro': 'Professionnel', 'perso': 'Personnel', 'urgent': 'Urgent' };
             return names[boardId] || boardId.charAt(0).toUpperCase() + boardId.slice(1);
         }
 
@@ -1961,73 +2059,52 @@
 
         document.getElementById('boardForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const name = document.getElementById('boardName').value.trim();
             const boardId = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            
             if (boards.includes(boardId)) {
                 showToast('Erreur', 'Une colonne avec ce nom existe déjà', 'error');
                 return;
             }
-            
             try {
                 boards.push(boardId);
-                
                 const q = query(collection(db, boardId), orderBy('createdAt', 'desc'));
                 onSnapshot(q, (snapshot) => {
                     allTasks[boardId] = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        board: boardId
+                        id: doc.id, ...doc.data(), board: boardId
                     }));
                     renderBoard(boardId, allTasks[boardId]);
                     updateStats();
-                    if (currentView === 'todo') {
-                        renderTodoList();
-                    }
-                }, (error) => {
-                    console.error(`Erreur pour ${boardId}:`, error);
-                });
-                
+                    if (currentView === 'todo') renderTodoList();
+                }, (error) => console.error(`Erreur ${boardId}:`, error));
+
                 localStorage.setItem('customBoards', JSON.stringify(boards));
-                
                 renderBoards();
                 closeBoardModal();
                 showToast('Colonne créée', `"${name}" a été ajoutée`);
             } catch (error) {
-                console.error("Erreur:", error);
-                showToast('Erreur', 'Impossible de créer la colonne: ' + error.message, 'error');
+                showToast('Erreur', 'Impossible de créer: ' + error.message, 'error');
             }
         });
 
-        window.renameBoard = async function(boardId, newName) {
+        window.renameBoard = function(boardId, newName) {
             if (!newName.trim()) return;
             showToast('Renommé', `Colonne renommée en "${newName}"`);
         };
 
         window.deleteBoard = async function(boardId) {
             const boardName = formatBoardName(boardId);
-            
-            if (!confirm(`Voulez-vous vraiment supprimer la colonne "${boardName}" et toutes ses tâches ?`)) {
-                return;
-            }
-            
+            if (!confirm(`Supprimer la colonne "${boardName}" et toutes ses tâches ?`)) return;
             try {
                 const tasks = allTasks[boardId] || [];
                 const batch = writeBatch(db);
-                tasks.forEach(task => {
-                    batch.delete(doc(db, boardId, task.id));
-                });
+                tasks.forEach(task => batch.delete(doc(db, boardId, task.id)));
                 await batch.commit();
-                
                 boards = boards.filter(b => b !== boardId);
                 localStorage.setItem('customBoards', JSON.stringify(boards));
                 delete allTasks[boardId];
-                
                 renderBoards();
                 showToast('Supprimé', `Colonne "${boardName}" supprimée`);
             } catch (error) {
-                console.error("Erreur:", error);
                 showToast('Erreur', 'Impossible de supprimer: ' + error.message, 'error');
             }
         };
@@ -2035,7 +2112,6 @@
         function renderBoard(board, cards) {
             const container = document.querySelector(`.cards[data-board="${board}"]`);
             const countElement = document.querySelector(`.board[data-board="${board}"] .card-count`);
-            
             if (!container) return;
 
             if (cards.length === 0) {
@@ -2049,22 +2125,17 @@
 
         function createCardHTML(card, board) {
             const priorityClass = `priority-${card.priority}`;
-            const priorityText = {
-                low: 'Basse',
-                medium: 'Moyenne',
-                high: 'Haute'
-            };
-
+            const priorityText = { low: 'Basse', medium: 'Moyenne', high: 'Haute' };
             return `
                 <div class="card" data-id="${card.id}" data-board="${board}">
                     <div class="card-header">
                         <h3>${escapeHtml(card.title)}</h3>
-                        <span class="card-priority ${priorityClass}">${priorityText[card.priority]}</span>
+                        <span class="card-priority ${priorityClass}">${priorityText[card.priority] || card.priority}</span>
                     </div>
                     ${card.description ? `<p>${escapeHtml(card.description)}</p>` : ''}
                     ${card.dueDate ? `
                         <div class="card-meta">
-                            <div class="meta-item">${formatDate(card.dueDate)}</div>
+                            <div class="meta-item">📅 ${formatDate(card.dueDate)}</div>
                         </div>
                     ` : ''}
                     <div class="card-actions">
@@ -2076,26 +2147,27 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
         function formatDate(dateString) {
-            const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            return new Date(dateString).toLocaleDateString('fr-FR', options);
+            if (!dateString) return '';
+            try {
+                const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                return new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', options);
+            } catch { return dateString; }
         }
 
         function updateStats() {
-            let totalTasks = 0;
-            let completedTasks = 0;
-            
+            let totalTasks = 0, completedTasks = 0;
             boards.forEach(board => {
                 const tasks = allTasks[board] || [];
                 totalTasks += tasks.length;
                 completedTasks += tasks.filter(t => t.completed).length;
             });
-            
             document.getElementById('totalTasks').textContent = totalTasks;
             document.getElementById('completedTasks').textContent = completedTasks;
         }
@@ -2103,14 +2175,12 @@
         window.openModal = function(board) {
             currentBoard = board;
             editingCard = null;
-            
             document.getElementById('modalTitle').textContent = 'Nouvelle tâche';
             document.getElementById('cardTitle').value = '';
             document.getElementById('cardDescription').value = '';
             document.getElementById('cardPriority').value = 'medium';
             document.getElementById('cardDueDate').value = '';
             document.getElementById('cardBoard').value = board;
-            
             document.getElementById('cardModal').classList.add('active');
             document.getElementById('cardTitle').focus();
         };
@@ -2119,22 +2189,18 @@
             try {
                 const docRef = doc(db, board, cardId);
                 const docSnap = await getDoc(docRef);
-                
                 if (docSnap.exists()) {
                     const card = { id: docSnap.id, ...docSnap.data() };
                     editingCard = { ...card, board };
-                    
                     document.getElementById('modalTitle').textContent = 'Modifier la tâche';
                     document.getElementById('cardTitle').value = card.title;
                     document.getElementById('cardDescription').value = card.description || '';
                     document.getElementById('cardPriority').value = card.priority;
                     document.getElementById('cardDueDate').value = card.dueDate || '';
                     document.getElementById('cardBoard').value = board;
-                    
                     document.getElementById('cardModal').classList.add('active');
                 }
             } catch (error) {
-                console.error("Erreur:", error);
                 showToast('Erreur', 'Impossible de charger la tâche', 'error');
             }
         };
@@ -2147,7 +2213,6 @@
 
         document.getElementById('cardForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const board = document.getElementById('cardBoard').value;
             const cardData = {
                 title: document.getElementById('cardTitle').value.trim(),
@@ -2157,19 +2222,17 @@
                 completed: editingCard ? editingCard.completed : false,
                 createdAt: editingCard ? editingCard.createdAt : new Date().toISOString()
             };
-
             try {
                 if (editingCard) {
                     await updateDoc(doc(db, board, editingCard.id), cardData);
-                    showToast('Modifié', 'Tâche modifiée avec succès');
+                    showToast('Modifié ✨', 'Tâche modifiée avec succès');
                 } else {
                     await addDoc(collection(db, board), cardData);
-                    showToast('Créée', 'Nouvelle tâche ajoutée');
+                    showToast('Créée 💖', 'Nouvelle tâche ajoutée');
                 }
                 window.closeModal();
             } catch (error) {
-                console.error("Erreur:", error);
-                showToast('Erreur', 'Impossible d\'enregistrer', 'error');
+                showToast('Erreur', 'Impossible d\'enregistrer: ' + error.message, 'error');
             }
         });
 
@@ -2178,57 +2241,52 @@
                 try {
                     await deleteDoc(doc(db, board, id));
                     showToast('Supprimée', 'Tâche supprimée');
-                    if (currentView === 'todo') {
-                        setTimeout(() => renderTodoList(), 100);
-                    }
+                    if (currentView === 'todo') setTimeout(() => renderTodoList(), 100);
                 } catch (error) {
-                    console.error("Erreur:", error);
                     showToast('Erreur', 'Impossible de supprimer', 'error');
                 }
             }
         };
 
+        // ─── CALENDAR ─────────────────────────────────────────────────────────
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
-            const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-            
+            const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
             document.getElementById('calendarMonth').textContent = `${monthNames[currentMonth]} ${currentYear}`;
-            
+
             const firstDay = new Date(currentYear, currentMonth, 1);
             const lastDay = new Date(currentYear, currentMonth + 1, 0);
             const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-            
+
             grid.innerHTML = '';
-            
-            ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].forEach(day => {
+
+            ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].forEach(day => {
                 const header = document.createElement('div');
                 header.className = 'calendar-day-header';
                 header.textContent = day;
                 grid.appendChild(header);
             });
-            
+
             for (let i = 0; i < startDay; i++) {
                 const emptyDay = document.createElement('div');
                 emptyDay.className = 'calendar-day other-month';
                 grid.appendChild(emptyDay);
             }
-            
+
             const today = new Date();
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'calendar-day';
-                
                 const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
                 if (isToday) dayEl.classList.add('today');
-                
+
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
                 let dayTasks = [];
                 boards.forEach(board => {
                     const tasks = allTasks[board] || [];
                     dayTasks = dayTasks.concat(tasks.filter(t => t.dueDate === dateStr));
                 });
-                
+
                 dayEl.innerHTML = `
                     <div class="calendar-day-number">${day}</div>
                     <div class="calendar-tasks">
@@ -2239,59 +2297,46 @@
                         `).join('')}
                     </div>
                 `;
-                
                 grid.appendChild(dayEl);
             }
         }
 
         window.previousMonth = function() {
-            if (currentMonth === 0) {
-                currentMonth = 11;
-                currentYear--;
-            } else {
-                currentMonth--;
-            }
+            if (currentMonth === 0) { currentMonth = 11; currentYear--; } else { currentMonth--; }
             renderCalendar();
         };
 
         window.nextMonth = function() {
-            if (currentMonth === 11) {
-                currentMonth = 0;
-                currentYear++;
-            } else {
-                currentMonth++;
-            }
+            if (currentMonth === 11) { currentMonth = 0; currentYear++; } else { currentMonth++; }
             renderCalendar();
         };
 
+        // ─── TODO ─────────────────────────────────────────────────────────────
         function renderTodoList() {
             const todoList = document.getElementById('todoList');
             let allTasksList = [];
-            
             boards.forEach(board => {
                 const tasks = allTasks[board] || [];
                 allTasksList = allTasksList.concat(tasks.map(t => ({ ...t, board })));
             });
-            
             allTasksList.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
                 return 0;
             });
-            
+
             if (allTasksList.length === 0) {
                 todoList.innerHTML = '<div class="empty-state">Aucune tâche à afficher</div>';
                 document.getElementById('todoProgressBar').style.width = '0%';
                 document.getElementById('todoProgressText').textContent = '0% complété';
                 return;
             }
-            
+
             const completedCount = allTasksList.filter(t => t.completed).length;
             const progressPercent = Math.round((completedCount / allTasksList.length) * 100);
-            
             document.getElementById('todoProgressBar').style.width = progressPercent + '%';
             document.getElementById('todoProgressText').textContent = `${progressPercent}% complété (${completedCount}/${allTasksList.length})`;
-            
+
             todoList.innerHTML = allTasksList.map(task => `
                 <div class="todo-item ${task.completed ? 'completed' : ''}">
                     <div class="todo-checkbox ${task.completed ? 'checked' : ''}" 
@@ -2300,7 +2345,7 @@
                     <div class="todo-content">
                         <div class="todo-text">${escapeHtml(task.title)}</div>
                         <div class="todo-meta">
-                            ${task.dueDate ? `<span>${formatDate(task.dueDate)}</span>` : ''}
+                            ${task.dueDate ? `<span>📅 ${formatDate(task.dueDate)}</span>` : ''}
                             <span>${formatBoardName(task.board)}</span>
                         </div>
                     </div>
@@ -2314,45 +2359,49 @@
         window.toggleTodoComplete = async function(board, taskId, completed) {
             try {
                 await updateDoc(doc(db, board, taskId), { completed });
-                showToast(
-                    completed ? 'Bravo' : 'Remise en cours',
-                    completed ? 'Tâche terminée' : 'Tâche réactivée'
-                );
+                showToast(completed ? 'Bravo ! 🎉' : 'Remise en cours', completed ? 'Tâche terminée !' : 'Tâche réactivée');
             } catch (error) {
-                console.error("Erreur:", error);
                 showToast('Erreur', 'Impossible de mettre à jour', 'error');
             }
         };
 
+        // ─── SEARCH ───────────────────────────────────────────────────────────
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const search = e.target.value.toLowerCase();
-            const allCards = document.querySelectorAll('.card');
-
-            allCards.forEach(card => {
+            document.querySelectorAll('.card').forEach(card => {
                 const title = card.querySelector('h3').textContent.toLowerCase();
                 const description = card.querySelector('p')?.textContent.toLowerCase() || '';
-                
-                if (title.includes(search) || description.includes(search)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+                card.style.display = (title.includes(search) || description.includes(search)) ? 'block' : 'none';
             });
         });
 
+        // ─── CLOSE MODALS ON BACKDROP CLICK ──────────────────────────────────
         document.getElementById('cardModal').addEventListener('click', (e) => {
             if (e.target.id === 'cardModal') window.closeModal();
         });
-
         document.getElementById('boardModal').addEventListener('click', (e) => {
             if (e.target.id === 'boardModal') closeBoardModal();
         });
-
         document.getElementById('noteModal').addEventListener('click', (e) => {
             if (e.target.id === 'noteModal') closeNoteModal();
         });
 
-        console.log('Board de Cyrielle chargé');
+        // ─── INIT ─────────────────────────────────────────────────────────────
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase initialisé");
+            showToast('Connexion réussie 💖', 'Votre board est prêt !');
+            loadBoardsConfig();
+            loadNotes();
+        } catch (error) {
+            console.error("Erreur Firebase:", error);
+            showToast('Mode hors-ligne', 'Les notes seront sauvegardées localement', 'error');
+            notes = loadNotesFromLocal();
+            renderNotes();
+        }
+
+        console.log('Board de Cyrielle chargé ✨');
     </script>
 </body>
 </html>
