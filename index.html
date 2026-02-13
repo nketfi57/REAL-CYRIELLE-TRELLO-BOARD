@@ -1434,14 +1434,27 @@
 
         async function loadBoardsConfig() {
             try {
-                const configDoc = await getDoc(doc(db, 'config', 'boards'));
-                if (configDoc.exists()) {
-                    boards = configDoc.data().list || ['pro', 'perso', 'urgent'];
+                // Charger les colonnes par défaut + les colonnes personnalisées depuis localStorage
+                const defaultBoards = ['pro', 'perso', 'urgent'];
+                const savedBoards = localStorage.getItem('customBoards');
+                
+                if (savedBoards) {
+                    try {
+                        boards = JSON.parse(savedBoards);
+                        // S'assurer que les colonnes par défaut sont toujours présentes
+                        defaultBoards.forEach(b => {
+                            if (!boards.includes(b)) {
+                                boards.unshift(b);
+                            }
+                        });
+                    } catch (e) {
+                        boards = defaultBoards;
+                    }
                 } else {
-                    await setDoc(doc(db, 'config', 'boards'), {
-                        list: ['pro', 'perso', 'urgent']
-                    });
+                    boards = defaultBoards;
                 }
+                
+                console.log('Colonnes chargées:', boards);
                 
                 boards.forEach(board => {
                     const q = query(collection(db, board), orderBy('createdAt', 'desc'));
@@ -1453,6 +1466,8 @@
                         }));
                         renderBoard(board, allTasks[board]);
                         updateStats();
+                    }, (error) => {
+                        console.error(`Erreur pour ${board}:`, error);
                     });
                 });
 
@@ -1539,7 +1554,7 @@
             e.preventDefault();
             
             const name = document.getElementById('boardName').value.trim();
-            const boardId = name.toLowerCase().replace(/\s+/g, '-');
+            const boardId = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             
             if (boards.includes(boardId)) {
                 showToast('Erreur', 'Une colonne avec ce nom existe déjà', 'error');
@@ -1547,9 +1562,10 @@
             }
             
             try {
+                // Ajouter la colonne à la liste
                 boards.push(boardId);
-                await updateBoardsConfig();
                 
+                // Créer un listener pour la nouvelle colonne
                 const q = query(collection(db, boardId), orderBy('createdAt', 'desc'));
                 onSnapshot(q, (snapshot) => {
                     allTasks[boardId] = snapshot.docs.map(doc => ({
@@ -1559,14 +1575,19 @@
                     }));
                     renderBoard(boardId, allTasks[boardId]);
                     updateStats();
+                }, (error) => {
+                    console.error(`Erreur pour ${boardId}:`, error);
                 });
+                
+                // Sauvegarder dans localStorage
+                localStorage.setItem('customBoards', JSON.stringify(boards));
                 
                 renderBoards();
                 closeBoardModal();
                 showToast('Colonne créée', `"${name}" a été ajoutée`, 'success');
             } catch (error) {
                 console.error("Erreur:", error);
-                showToast('Erreur', 'Impossible de créer la colonne', 'error');
+                showToast('Erreur', 'Impossible de créer la colonne: ' + error.message, 'error');
             }
         });
 
@@ -1576,8 +1597,10 @@
         };
 
         window.deleteBoard = async function(boardId) {
-            if (boards.length <= 1) {
-                showToast('Erreur', 'Vous devez garder au moins une colonne', 'error');
+            // Empêcher la suppression des colonnes par défaut
+            const defaultBoards = ['pro', 'perso', 'urgent'];
+            if (defaultBoards.includes(boardId)) {
+                showToast('Erreur', 'Impossible de supprimer les colonnes par défaut', 'error');
                 return;
             }
             
@@ -1594,22 +1617,16 @@
                 await batch.commit();
                 
                 boards = boards.filter(b => b !== boardId);
-                await updateBoardsConfig();
+                localStorage.setItem('customBoards', JSON.stringify(boards));
                 delete allTasks[boardId];
                 
                 renderBoards();
                 showToast('Supprimé', 'Colonne supprimée', 'info');
             } catch (error) {
                 console.error("Erreur:", error);
-                showToast('Erreur', 'Impossible de supprimer', 'error');
+                showToast('Erreur', 'Impossible de supprimer: ' + error.message, 'error');
             }
         };
-
-        async function updateBoardsConfig() {
-            await setDoc(doc(db, 'config', 'boards'), {
-                list: boards
-            });
-        }
 
         function renderBoard(board, cards) {
             const container = document.querySelector(`.cards[data-board="${board}"]`);
