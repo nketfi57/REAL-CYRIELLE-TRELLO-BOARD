@@ -1747,65 +1747,19 @@
             }
         };
 
-        // ─── NOTES – STOCKAGE LOCAL (FALLBACK FIABLE) ────────────────────────
-        // Les notes sont sauvegardées dans localStorage EN PLUS de Firebase
-        // pour garantir que ça fonctionne même si les règles Firestore bloquent.
-
-        function loadNotesFromLocal() {
-            try {
-                const raw = localStorage.getItem('cyrielle_notes');
-                return raw ? JSON.parse(raw) : [];
-            } catch { return []; }
-        }
-
-        function saveNotesToLocal(notesArr) {
-            try {
-                localStorage.setItem('cyrielle_notes', JSON.stringify(notesArr));
-            } catch (e) {
-                console.error('Erreur localStorage notes:', e);
-            }
-        }
-
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Tentative de chargement Firebase pour les notes, avec fallback localStorage
-        async function loadNotes() {
-            // Charger d'abord depuis localStorage pour affichage immédiat
-            notes = loadNotesFromLocal();
-            if (currentView === 'notes') renderNotes();
-
-            // Essayer de synchroniser avec Firebase
-            try {
-                const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'));
-                onSnapshot(q, (snapshot) => {
-                    const firestoreNotes = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        source: 'firestore',
-                        ...doc.data()
-                    }));
-                    
-                    if (firestoreNotes.length > 0) {
-                        // Fusionner : notes Firestore + notes locales non encore sync
-                        const firestoreIds = new Set(firestoreNotes.map(n => n.id));
-                        const localOnly = notes.filter(n => n.source === 'local' && !firestoreIds.has(n.id));
-                        notes = [...firestoreNotes, ...localOnly]
-                            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    } else if (notes.length === 0) {
-                        notes = [];
-                    }
-                    // Ne pas écraser les notes locales si Firestore est vide mais qu'il y a des notes locales
-                    
-                    saveNotesToLocal(notes);
-                    if (currentView === 'notes') renderNotes();
-                }, (error) => {
-                    console.warn('Firestore notes snapshot error (utilisation locale):', error);
-                    // Garder les notes locales
-                });
-            } catch (error) {
-                console.warn('Firestore notes non disponible, mode local activé:', error);
-            }
+        // ─── NOTES – FIREBASE UNIQUEMENT ─────────────────────────────────────
+        function loadNotes() {
+            const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'));
+            onSnapshot(q, (snapshot) => {
+                notes = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                if (currentView === 'notes') renderNotes();
+            }, (error) => {
+                console.error('Erreur chargement notes:', error);
+                showToast('Erreur', 'Impossible de charger les notes', 'error');
+            });
         }
 
         function renderNotes() {
@@ -1850,18 +1804,12 @@
 
         window.deleteNote = async function(noteId) {
             if (!confirm('Supprimer cette note ?')) return;
-            
-            // Suppression locale immédiate
-            notes = notes.filter(n => n.id !== noteId);
-            saveNotesToLocal(notes);
-            renderNotes();
-            showToast('Supprimée', 'Note supprimée avec succès');
-
-            // Tentative suppression Firestore
             try {
                 await deleteDoc(doc(db, 'notes', noteId));
+                showToast('Supprimée', 'Note supprimée avec succès');
             } catch (error) {
-                console.warn('Suppression Firestore échouée (note supprimée localement):', error);
+                console.error('Erreur suppression note:', error);
+                showToast('Erreur', 'Impossible de supprimer', 'error');
             }
         };
 
@@ -1882,70 +1830,24 @@
                 return;
             }
 
-            const now = new Date().toISOString();
+            const noteData = {
+                title: titleVal,
+                content: contentVal,
+                createdAt: editingNote ? editingNote.createdAt : new Date().toISOString()
+            };
 
-            if (editingNote) {
-                // ── MODIFICATION ──
-                const updatedNote = {
-                    ...editingNote,
-                    title: titleVal,
-                    content: contentVal,
-                };
-
-                // Mise à jour locale immédiate
-                const idx = notes.findIndex(n => n.id === editingNote.id);
-                if (idx !== -1) notes[idx] = updatedNote;
-                saveNotesToLocal(notes);
-                renderNotes();
-                closeNoteModal();
-                showToast('Modifiée ✨', 'Note mise à jour avec succès');
-
-                // Tentative Firestore
-                try {
-                    await updateDoc(doc(db, 'notes', editingNote.id), {
-                        title: titleVal,
-                        content: contentVal,
-                        createdAt: editingNote.createdAt || now
-                    });
-                } catch (error) {
-                    console.warn('Mise à jour Firestore échouée (sauvegarde locale OK):', error);
+            try {
+                if (editingNote) {
+                    await updateDoc(doc(db, 'notes', editingNote.id), noteData);
+                    showToast('Modifiée ✨', 'Note mise à jour avec succès');
+                } else {
+                    await addDoc(collection(db, 'notes'), noteData);
+                    showToast('Créée 💖', 'Nouvelle note ajoutée');
                 }
-
-            } else {
-                // ── CRÉATION ──
-                const localId = generateId();
-                const newNote = {
-                    id: localId,
-                    source: 'local',
-                    title: titleVal,
-                    content: contentVal,
-                    createdAt: now
-                };
-
-                // Sauvegarde locale immédiate
-                notes.unshift(newNote);
-                saveNotesToLocal(notes);
-                renderNotes();
                 closeNoteModal();
-                showToast('Créée 💖', 'Nouvelle note ajoutée');
-
-                // Tentative Firestore
-                try {
-                    const docRef = await addDoc(collection(db, 'notes'), {
-                        title: titleVal,
-                        content: contentVal,
-                        createdAt: now
-                    });
-                    // Mettre à jour l'ID local avec l'ID Firestore
-                    const idx = notes.findIndex(n => n.id === localId);
-                    if (idx !== -1) {
-                        notes[idx].id = docRef.id;
-                        notes[idx].source = 'firestore';
-                        saveNotesToLocal(notes);
-                    }
-                } catch (error) {
-                    console.warn('Sauvegarde Firestore notes échouée (sauvegarde locale OK):', error);
-                }
+            } catch (error) {
+                console.error('Erreur sauvegarde note:', error);
+                showToast('Erreur', 'Impossible d\'enregistrer : ' + error.message, 'error');
             }
         });
 
@@ -2396,9 +2298,7 @@
             loadNotes();
         } catch (error) {
             console.error("Erreur Firebase:", error);
-            showToast('Mode hors-ligne', 'Les notes seront sauvegardées localement', 'error');
-            notes = loadNotesFromLocal();
-            renderNotes();
+            showToast('Erreur', 'Impossible de se connecter à Firebase', 'error');
         }
 
         console.log('Board de Cyrielle chargé ✨');
