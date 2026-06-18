@@ -1,588 +1,141 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark-mode">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Board de Halim</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Intégration de GSAP -->
+    <title>Dashboard | Halim</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            /* Thème Bleu Clean - Light */
-            --bg-base: #e0e7ff;
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --card-border: rgba(255, 255, 255, 0.5);
-            --text-main: #1e3a8a;
-            --text-muted: #64748b;
-            --primary-blue: #2563eb;
-            --accent-blue: #3b82f6;
-            --hover-blue: #dbeafe;
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --bg-base: #020617; --card-bg: rgba(15, 23, 42, 0.7); --card-border: rgba(30, 58, 138, 0.5);
+            --text-main: #f8fafc; --text-muted: #94a3b8; --primary-blue: #3b82f6; --accent-blue: #60a5fa;
         }
-
-        body.dark-mode {
-            /* Thème Bleu Clean - Dark */
-            --bg-base: #020617;
-            --card-bg: rgba(15, 23, 42, 0.7);
-            --card-border: rgba(30, 58, 138, 0.5);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary-blue: #3b82f6;
-            --accent-blue: #60a5fa;
-            --hover-blue: #1e293b;
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            min-height: 100vh;
-            overflow-x: hidden;
-            transition: background-color 0.5s ease;
-        }
-
-        /* Arrière-plan animé (Orbes) */
-        .bg-orbs {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: -1;
-            overflow: hidden;
-            pointer-events: none;
-        }
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.6;
-        }
-        .orb-1 { width: 400px; height: 400px; background: #3b82f6; top: -100px; left: -100px; }
-        .orb-2 { width: 500px; height: 500px; background: #8b5cf6; bottom: -150px; right: -100px; }
-        .orb-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 40%; }
-
-        /* Conteneur principal */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            position: relative;
-        }
-
-        /* Bouton Thème */
-        .theme-toggle {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 12px 24px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            box-shadow: var(--glass-shadow);
-            z-index: 100;
-            transition: transform 0.2s;
-        }
-        .theme-toggle:hover { transform: scale(1.05); }
-
-        /* Header */
-        .header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 3.5em;
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            background: linear-gradient(135deg, var(--primary-blue), #06b6d4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-        }
-
-        /* Switcher de Vues */
-        .view-switcher {
-            display: flex;
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--card-border);
-            border-radius: 30px;
-            padding: 5px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .view-btn {
-            padding: 10px 25px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 25px;
-            transition: all 0.3s;
-        }
-
-        .view-btn.active {
-            background: var(--primary-blue);
-            color: white;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-        }
-
-        /* Vues */
-        .view-section {
-            display: none;
-            opacity: 0;
-        }
-
-        /* --- KANBAN VIEW --- */
-        .boards-container {
-            display: flex;
-            gap: 30px;
-            overflow-x: auto;
-            padding-bottom: 20px;
-            align-items: flex-start;
-        }
-
-        .board {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            min-width: 320px;
-            max-width: 320px;
-            padding: 20px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .board-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            font-weight: 700;
-            font-size: 1.2em;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid var(--card-border);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        body.dark-mode .card { background: rgba(0, 0, 0, 0.4); }
-        .card:hover { transform: translateY(-5px); }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); margin: 0; min-height: 100vh; overflow-x: hidden; }
         
-        .card h3 { margin-bottom: 8px; font-size: 1.1em; }
-        .card p { font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+        /* Splash Screen */
+        #splash { position: fixed; inset: 0; background: var(--bg-base); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .welcome-text { font-size: 3rem; font-weight: 800; color: var(--primary-blue); }
+
+        /* UI */
+        #app { opacity: 0; max-width: 1000px; margin: 40px auto; padding: 20px; }
+        .glass { background: var(--card-bg); backdrop-filter: blur(15px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px; margin-bottom: 20px; }
         
-        .card-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
+        /* Nav */
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; }
+        .tab-btn { background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .tab-btn.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
 
-        .action-btn {
-            background: var(--hover-blue);
-            color: var(--primary-blue);
-            border: none;
-            padding: 5px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .add-btn {
-            width: 100%;
-            padding: 12px;
-            background: transparent;
-            border: 2px dashed var(--primary-blue);
-            color: var(--primary-blue);
-            border-radius: 15px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .add-btn:hover { background: var(--primary-blue); color: white; }
-
-        /* --- TODO VIEW --- */
-        .todo-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .todo-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
-            margin-bottom: 10px;
-            border: 1px solid var(--card-border);
-        }
-        body.dark-mode .todo-item { background: rgba(0, 0, 0, 0.3); }
-
-        .todo-checkbox {
-            width: 24px;
-            height: 24px;
-            border: 2px solid var(--primary-blue);
-            border-radius: 6px;
-            margin-right: 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .todo-item.completed .todo-checkbox {
-            background: var(--primary-blue);
-        }
-        .todo-item.completed .todo-text {
-            text-decoration: line-through;
-            opacity: 0.5;
-        }
-        .todo-text { flex: 1; font-weight: 500; }
-
-        .input-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        .input-group input {
-            flex: 1;
-            padding: 15px;
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.5);
-            color: var(--text-main);
-            font-size: 1em;
-            outline: none;
-        }
-        body.dark-mode .input-group input { background: rgba(0, 0, 0, 0.5); }
-        .input-group button {
-            padding: 0 30px;
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* --- TOAST NOTIFICATIONS --- */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .toast {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border-left: 5px solid var(--primary-blue);
-            color: var(--text-main);
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: var(--glass-shadow);
-            font-weight: 500;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            min-width: 250px;
-        }
-        .toast-close {
-            background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2em;
-        }
+        /* Grid / Components */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .day { aspect-ratio: 1; border: 1px solid var(--card-border); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; }
+        .day.has-task { background: var(--primary-blue); color: white; }
+        
+        input, textarea { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; color: white; margin-bottom: 10px; }
+        button.add-btn { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; }
+        
+        footer { text-align: center; color: var(--text-muted); padding: 20px; margin-top: 50px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <!-- Arrière-plan animé GSAP -->
-    <div class="bg-orbs">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
+    <div id="splash"><h1 class="welcome-text">Bienvenue Halim</h1></div>
 
-    <button class="theme-toggle" onclick="toggleTheme()">🌓 Mode Nuit</button>
-    <div class="toast-container" id="toastContainer"></div>
-
-    <div class="container">
-        <header class="header gs-reveal">
-            <h1>Board de Halim</h1>
-            <div class="view-switcher">
-                <button class="view-btn active" onclick="switchView('board')">📋 Projets</button>
-                <button class="view-btn" onclick="switchView('todo')">🎯 Objectifs</button>
+    <div id="app">
+        <header style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Dashboard</h1>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchView('tasks')"><i data-lucide="check-square"></i> Tâches</button>
+                <button class="tab-btn" onclick="switchView('calendar')"><i data-lucide="calendar"></i> Planning</button>
+                <button class="tab-btn" onclick="switchView('notes')"><i data-lucide="sticky-note"></i> Notes</button>
             </div>
         </header>
 
-        <!-- VUE KANBAN -->
-        <div id="boardView" class="view-section boards-container" style="display: flex; opacity: 1;">
-            
-            <div class="board gs-board">
-                <div class="board-header">
-                    <span>À Faire ⏳</span>
-                    <span style="background: var(--hover-blue); padding: 2px 8px; border-radius: 10px; font-size: 0.8em; color: var(--primary-blue)">2</span>
-                </div>
-                <div class="cards">
-                    <div class="card gs-card">
-                        <h3>Design UI/UX</h3>
-                        <p>Créer les maquettes Figma pour le nouveau dashboard admin.</p>
-                        <div class="card-actions">
-                            <button class="action-btn" onclick="deleteItem(this)">Terminer</button>
-                        </div>
-                    </div>
-                    <div class="card gs-card">
-                        <h3>Setup Firebase</h3>
-                        <p>Configurer l'authentification et la base de données Firestore.</p>
-                        <div class="card-actions">
-                            <button class="action-btn" onclick="deleteItem(this)">Terminer</button>
-                        </div>
-                    </div>
-                </div>
-                <button class="add-btn mt-4" onclick="showToast('Ouverture de la modal...')">+ Ajouter une tâche</button>
+        <!-- Tasks -->
+        <div id="tasks-view" class="view">
+            <div class="glass">
+                <input type="text" id="taskInput" placeholder="Nouvelle tâche...">
+                <input type="date" id="dateInput">
+                <button class="add-btn" onclick="addTask()"><i data-lucide="plus"></i> Ajouter</button>
             </div>
-
-            <div class="board gs-board">
-                <div class="board-header">
-                    <span>En Cours 🚀</span>
-                    <span style="background: var(--hover-blue); padding: 2px 8px; border-radius: 10px; font-size: 0.8em; color: var(--primary-blue)">1</span>
-                </div>
-                <div class="cards">
-                    <div class="card gs-card">
-                        <h3>Animations GSAP</h3>
-                        <p>Intégrer des transitions fluides sur les différents composants web.</p>
-                        <div class="card-actions">
-                            <button class="action-btn" onclick="deleteItem(this)">Terminer</button>
-                        </div>
-                    </div>
-                </div>
-                <button class="add-btn mt-4" onclick="showToast('Ouverture de la modal...')">+ Ajouter une tâche</button>
-            </div>
-
+            <div id="taskList"></div>
         </div>
 
-        <!-- VUE OBJECTIFS -->
-        <div id="todoView" class="view-section">
-            <div class="todo-container gs-todo-container">
-                <h2 style="margin-bottom: 20px; color: var(--primary-blue);">Masterclass de la journée 🔥</h2>
-                
-                <div id="todoList">
-                    <div class="todo-item gs-todo">
-                        <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                        <div class="todo-text">Faire 1h de code intensif</div>
-                        <button class="action-btn" onclick="deleteItem(this)">🗑️</button>
-                    </div>
-                    <div class="todo-item gs-todo">
-                        <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                        <div class="todo-text">Séance de sport (Pecs/Triceps)</div>
-                        <button class="action-btn" onclick="deleteItem(this)">🗑️</button>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <input type="text" id="newTodoInput" placeholder="Nouvel objectif pour tout casser aujourd'hui...">
-                    <button onclick="addTodo()">Ajouter</button>
-                </div>
+        <!-- Calendar -->
+        <div id="calendar-view" class="view" style="display:none;">
+            <div class="glass">
+                <h3 id="cal-month">Juin 2026</h3>
+                <div class="calendar-grid" id="cal-grid"></div>
             </div>
         </div>
 
+        <!-- Notes -->
+        <div id="notes-view" class="view" style="display:none;">
+            <div class="glass">
+                <textarea id="noteInput" rows="4" placeholder="Prendre une note..."></textarea>
+                <button class="add-btn" onclick="addNote()"><i data-lucide="save"></i> Enregistrer</button>
+            </div>
+            <div id="noteList"></div>
+        </div>
+
+        <footer>Fait par Nassim</footer>
     </div>
 
     <script>
-        // --- 1. ANIMATIONS INITIALES (GSAP) ---
-        window.onload = () => {
-            // Animation de fond fluide et infinie
-            gsap.to(".orb-1", { x: 100, y: 50, duration: 10, repeat: -1, yoyo: true, ease: "sine.inOut" });
-            gsap.to(".orb-2", { x: -80, y: -100, duration: 12, repeat: -1, yoyo: true, ease: "sine.inOut" });
-            gsap.to(".orb-3", { scale: 1.5, x: 50, duration: 8, repeat: -1, yoyo: true, ease: "sine.inOut" });
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
 
-            // Apparition du Header
-            gsap.from(".gs-reveal", { y: -50, opacity: 0, duration: 1, ease: "power3.out" });
-            
-            // Apparition en cascade des colonnes et des cartes
-            gsap.from(".gs-board", { y: 50, opacity: 0, duration: 0.8, stagger: 0.2, ease: "power2.out", delay: 0.3 });
-            gsap.from(".gs-card", { scale: 0.8, opacity: 0, duration: 0.5, stagger: 0.1, ease: "back.out(1.7)", delay: 0.6 });
+        window.onload = () => {
+            lucide.createIcons();
+            const tl = gsap.timeline();
+            tl.to(".welcome-text", { opacity: 0, delay: 1 })
+              .to("#splash", { yPercent: -100, duration: 1, ease: "power4.inOut" })
+              .to("#app", { opacity: 1, duration: 1 });
+            render();
         };
 
-        // --- 2. SWITCH DE VUES AVEC GSAP ---
-        let currentViewId = 'boardView';
+        function switchView(view) {
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`${view}-view`).style.display = 'block';
+            event.currentTarget.classList.add('active');
+            render();
+        }
 
-        function switchView(viewName) {
-            const newViewId = viewName + 'View';
-            if (currentViewId === newViewId) return;
+        function addTask() {
+            const task = { text: document.getElementById('taskInput').value, date: document.getElementById('dateInput').value };
+            if(!task.text) return;
+            tasks.push(task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            render();
+        }
 
-            // Mise à jour des boutons
-            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`button[onclick="switchView('${viewName}')"]`).classList.add('active');
+        function addNote() {
+            const content = document.getElementById('noteInput').value;
+            if(!content) return;
+            notes.push(content);
+            localStorage.setItem('notes', JSON.stringify(notes));
+            render();
+        }
 
-            const currentView = document.getElementById(currentViewId);
-            const newView = document.getElementById(newViewId);
-
-            // Timeline GSAP pour la transition
-            const tl = gsap.timeline();
+        function render() {
+            // Render Tasks
+            const tList = document.getElementById('taskList');
+            tList.innerHTML = tasks.map(t => `<div class="glass">${t.text} - <strong>${t.date}</strong></div>`).join('');
             
-            tl.to(currentView, { 
-                opacity: 0, 
-                y: 20, 
-                duration: 0.3, 
-                ease: "power2.in",
-                onComplete: () => {
-                    currentView.style.display = 'none';
-                    newView.style.display = viewName === 'board' ? 'flex' : 'block';
-                }
-            })
-            .fromTo(newView, 
-                { opacity: 0, y: -20 }, 
-                { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
-            );
+            // Render Notes
+            const nList = document.getElementById('noteList');
+            nList.innerHTML = notes.map(n => `<div class="glass">${n}</div>`).join('');
 
-            // Si on va sur les objectifs, on anime l'intérieur
-            if(viewName === 'todo') {
-                gsap.fromTo(".gs-todo", 
-                    { x: -50, opacity: 0 }, 
-                    { x: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "back.out(1.5)", delay: 0.4 }
-                );
+            // Render Calendar
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+            for(let i = 1; i <= 30; i++) {
+                const dateStr = `2026-06-${i.toString().padStart(2, '0')}`;
+                const hasTask = tasks.find(t => t.date === dateStr);
+                grid.innerHTML += `<div class="day ${hasTask ? 'has-task' : ''}">${i}</div>`;
             }
-
-            currentViewId = newViewId;
+            lucide.createIcons();
         }
-
-        // --- 3. GESTION DU THEME ---
-        function toggleTheme() {
-            const body = document.body;
-            body.classList.toggle('dark-mode');
-            const btn = document.querySelector('.theme-toggle');
-            
-            // Petite animation GSAP sur le bouton lors du clic
-            gsap.fromTo(btn, { scale: 0.9 }, { scale: 1, duration: 0.3, ease: "elastic.out(1, 0.3)" });
-
-            if (body.classList.contains('dark-mode')) {
-                btn.innerHTML = '☀️ Mode Jour';
-                gsap.to(".orb", { opacity: 0.3, duration: 1 }); // Assombrit les orbes
-            } else {
-                btn.innerHTML = '🌓 Mode Nuit';
-                gsap.to(".orb", { opacity: 0.6, duration: 1 });
-            }
-        }
-
-        // --- 4. TOAST NOTIFICATIONS GSAP ---
-        function showToast(message) {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast`;
-            toast.innerHTML = `
-                <span>${message}</span>
-                <button class="toast-close" onclick="closeToast(this.parentElement)">×</button>
-            `;
-            container.appendChild(toast);
-
-            // Animation d'entrée
-            gsap.fromTo(toast, 
-                { x: 100, opacity: 0 }, 
-                { x: 0, opacity: 1, duration: 0.5, ease: "back.out(1.5)" }
-            );
-
-            // Auto-destruction après 3s
-            setTimeout(() => {
-                if(document.body.contains(toast)) closeToast(toast);
-            }, 3000);
-        }
-
-        function closeToast(toastElement) {
-            gsap.to(toastElement, {
-                x: 100, 
-                opacity: 0, 
-                duration: 0.3, 
-                ease: "power2.in", 
-                onComplete: () => toastElement.remove()
-            });
-        }
-
-        // --- 5. LOGIQUE DES TÂCHES ET OBJECTIFS ---
-        function deleteItem(btn) {
-            const item = btn.closest('.card') || btn.closest('.todo-item');
-            
-            // Animation de suppression stylée
-            gsap.to(item, {
-                scale: 0.5,
-                opacity: 0,
-                duration: 0.3,
-                ease: "back.in(1.5)",
-                onComplete: () => {
-                    item.remove();
-                    showToast('Élément supprimé 🧹');
-                }
-            });
-        }
-
-        function toggleTodo(checkbox) {
-            const item = checkbox.closest('.todo-item');
-            item.classList.toggle('completed');
-            
-            if(item.classList.contains('completed')) {
-                // Petit pop sur la coche
-                gsap.fromTo(checkbox, { scale: 0.5 }, { scale: 1, duration: 0.4, ease: "back.out(2)" });
-                showToast('Objectif validé ! 🔥');
-            }
-        }
-
-        function addTodo() {
-            const input = document.getElementById('newTodoInput');
-            const text = input.value.trim();
-            if(!text) return;
-
-            const list = document.getElementById('todoList');
-            const newItem = document.createElement('div');
-            newItem.className = 'todo-item gs-todo';
-            newItem.innerHTML = `
-                <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                <div class="todo-text">${text}</div>
-                <button class="action-btn" onclick="deleteItem(this)">🗑️</button>
-            `;
-            
-            list.appendChild(newItem);
-            input.value = '';
-
-            // Animation d'entrée du nouvel élément
-            gsap.fromTo(newItem, 
-                { y: 20, opacity: 0, scale: 0.9 }, 
-                { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.5)" }
-            );
-
-            showToast('Nouvel objectif ajouté 🎯');
-        }
-
-        // Écoute de la touche Entrée
-        document.getElementById('newTodoInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addTodo();
-        });
-
     </script>
 </body>
 </html>
