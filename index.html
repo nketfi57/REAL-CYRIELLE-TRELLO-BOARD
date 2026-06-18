@@ -2,140 +2,153 @@
 <html lang="fr" class="dark-mode">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard | Halim</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Halim</title>
+    <!-- GSAP & Lucide -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --bg-base: #020617; --card-bg: rgba(15, 23, 42, 0.7); --card-border: rgba(30, 58, 138, 0.5);
-            --text-main: #f8fafc; --text-muted: #94a3b8; --primary-blue: #3b82f6; --accent-blue: #60a5fa;
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.7);
+            --border: rgba(30, 58, 138, 0.5);
+            --blue: #3b82f6;
+            --white: #ffffff;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); margin: 0; min-height: 100vh; overflow-x: hidden; }
-        
-        /* Splash Screen */
-        #splash { position: fixed; inset: 0; background: var(--bg-base); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .welcome-text { font-size: 3rem; font-weight: 800; color: var(--primary-blue); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--white); min-height: 100vh; overflow-x: hidden; }
 
-        /* UI */
-        #app { opacity: 0; max-width: 1000px; margin: 40px auto; padding: 20px; }
-        .glass { background: var(--card-bg); backdrop-filter: blur(15px); border: 1px solid var(--card-border); border-radius: 20px; padding: 25px; margin-bottom: 20px; }
-        
-        /* Nav */
-        .tabs { display: flex; gap: 10px; margin-bottom: 30px; }
-        .tab-btn { background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
-        .tab-btn.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+        /* Splash Screen Bicolor */
+        #splash { position: fixed; inset: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 999; }
+        .welcome-title { font-size: 4rem; font-weight: 800; }
+        .text-blue { color: var(--blue); }
 
-        /* Grid / Components */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-        .day { aspect-ratio: 1; border: 1px solid var(--card-border); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; }
-        .day.has-task { background: var(--primary-blue); color: white; }
+        /* Background Animé */
+        .bg-mesh { position: fixed; inset: 0; z-index: -1; overflow: hidden; filter: blur(80px); }
+        .blob { position: absolute; width: 400px; height: 400px; background: var(--blue); border-radius: 50%; opacity: 0.4; }
+
+        /* App Layout */
+        #app { opacity: 0; max-width: 1200px; margin: 0 auto; padding: 40px; }
+        .grid { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
+        .glass { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
+
+        /* Components */
+        .nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px; background: transparent; border: none; color: #94a3b8; cursor: pointer; transition: 0.3s; font-weight: 600; }
+        .nav-btn.active { color: var(--blue); background: rgba(59, 130, 246, 0.1); border-radius: 10px; }
         
-        input, textarea { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 10px; color: white; margin-bottom: 10px; }
-        button.add-btn { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; }
-        
-        footer { text-align: center; color: var(--text-muted); padding: 20px; margin-top: 50px; font-size: 0.9em; }
+        /* Calendar UI */
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .day { aspect-ratio: 1; border: 1px solid var(--border); display: flex; justify-content: center; align-items: center; border-radius: 10px; cursor: pointer; }
+        .day:hover { background: var(--blue); }
+
+        footer { text-align: center; color: #475569; margin-top: 50px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-    <div id="splash"><h1 class="welcome-text">Bienvenue Halim</h1></div>
+    <div id="splash">
+        <h1 class="welcome-title">Bienvenue <span class="text-blue">Halim</span></h1>
+    </div>
+
+    <div class="bg-mesh">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
 
     <div id="app">
-        <header style="display:flex; justify-content:space-between; align-items:center;">
-            <h1>Dashboard</h1>
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchView('tasks')"><i data-lucide="check-square"></i> Tâches</button>
-                <button class="tab-btn" onclick="switchView('calendar')"><i data-lucide="calendar"></i> Planning</button>
-                <button class="tab-btn" onclick="switchView('notes')"><i data-lucide="sticky-note"></i> Notes</button>
-            </div>
-        </header>
-
-        <!-- Tasks -->
-        <div id="tasks-view" class="view">
+        <div class="grid">
+            <!-- Sidebar -->
             <div class="glass">
-                <input type="text" id="taskInput" placeholder="Nouvelle tâche...">
-                <input type="date" id="dateInput">
-                <button class="add-btn" onclick="addTask()"><i data-lucide="plus"></i> Ajouter</button>
+                <nav>
+                    <button class="nav-btn active" onclick="show('dashboard')"><i data-lucide="layout"></i> Dashboard</button>
+                    <button class="nav-btn" onclick="show('calendar')"><i data-lucide="calendar"></i> Calendrier</button>
+                </nav>
             </div>
-            <div id="taskList"></div>
-        </div>
 
-        <!-- Calendar -->
-        <div id="calendar-view" class="view" style="display:none;">
-            <div class="glass">
-                <h3 id="cal-month">Juin 2026</h3>
-                <div class="calendar-grid" id="cal-grid"></div>
+            <!-- Main Content -->
+            <div class="glass" id="content">
+                <!-- Dashboard View -->
+                <div id="dashboard-view">
+                    <h2>Tâches</h2>
+                    <div style="margin-top:20px;">
+                        <input type="text" id="tInput" placeholder="Ajouter une tâche..." style="width:100%; padding:10px; background:transparent; border:1px solid var(--border); color:white; border-radius:8px;">
+                        <div id="tList" style="margin-top:20px;"></div>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendar-view" style="display:none;">
+                    <div class="cal-header">
+                        <button onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
+                        <h3 id="monthName">Juin 2026</h3>
+                        <button onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="grid-cal" id="calGrid"></div>
+                </div>
             </div>
         </div>
-
-        <!-- Notes -->
-        <div id="notes-view" class="view" style="display:none;">
-            <div class="glass">
-                <textarea id="noteInput" rows="4" placeholder="Prendre une note..."></textarea>
-                <button class="add-btn" onclick="addNote()"><i data-lucide="save"></i> Enregistrer</button>
-            </div>
-            <div id="noteList"></div>
-        </div>
-
         <footer>Fait par Nassim</footer>
     </div>
 
     <script>
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        // Init
+        let currentDate = new Date();
+        lucide.createIcons();
 
-        window.onload = () => {
-            lucide.createIcons();
-            const tl = gsap.timeline();
-            tl.to(".welcome-text", { opacity: 0, delay: 1 })
-              .to("#splash", { yPercent: -100, duration: 1, ease: "power4.inOut" })
-              .to("#app", { opacity: 1, duration: 1 });
-            render();
-        };
+        // GSAP Reveal
+        const tl = gsap.timeline();
+        tl.to(".welcome-title", { opacity: 0, delay: 1.5 })
+          .to("#splash", { yPercent: -100, duration: 1, ease: "power4.inOut" })
+          .to("#app", { opacity: 1, duration: 1 });
 
-        function switchView(view) {
-            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`${view}-view`).style.display = 'block';
-            event.currentTarget.classList.add('active');
-            render();
-        }
+        // Animation Background (Blobs)
+        gsap.to(".blob-1", { x: 200, y: 100, duration: 8, repeat: -1, yoyo: true, ease: "sine.inOut" });
+        gsap.to(".blob-2", { x: -200, y: -100, duration: 12, repeat: -1, yoyo: true, ease: "sine.inOut" });
 
-        function addTask() {
-            const task = { text: document.getElementById('taskInput').value, date: document.getElementById('dateInput').value };
-            if(!task.text) return;
-            tasks.push(task);
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            render();
-        }
-
-        function addNote() {
-            const content = document.getElementById('noteInput').value;
-            if(!content) return;
-            notes.push(content);
-            localStorage.setItem('notes', JSON.stringify(notes));
-            render();
-        }
-
-        function render() {
-            // Render Tasks
-            const tList = document.getElementById('taskList');
-            tList.innerHTML = tasks.map(t => `<div class="glass">${t.text} - <strong>${t.date}</strong></div>`).join('');
+        function show(view) {
+            document.getElementById('dashboard-view').style.display = view === 'dashboard' ? 'block' : 'none';
+            document.getElementById('calendar-view').style.display = view === 'calendar' ? 'block' : 'none';
             
-            // Render Notes
-            const nList = document.getElementById('noteList');
-            nList.innerHTML = notes.map(n => `<div class="glass">${n}</div>`).join('');
-
-            // Render Calendar
-            const grid = document.getElementById('cal-grid');
-            grid.innerHTML = '';
-            for(let i = 1; i <= 30; i++) {
-                const dateStr = `2026-06-${i.toString().padStart(2, '0')}`;
-                const hasTask = tasks.find(t => t.date === dateStr);
-                grid.innerHTML += `<div class="day ${hasTask ? 'has-task' : ''}">${i}</div>`;
-            }
-            lucide.createIcons();
+            // Animation de transition de contenu
+            gsap.from("#content", { opacity: 0, y: 20, duration: 0.3 });
+            
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
         }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calGrid');
+            const monthName = document.getElementById('monthName');
+            grid.innerHTML = '';
+            
+            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear();
+            monthName.innerText = currentDate.toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
+            
+            for(let i=1; i<=30; i++) {
+                grid.innerHTML += `<div class="day">${i}</div>`;
+            }
+            gsap.from(".day", { scale: 0.8, opacity: 0, stagger: 0.02, duration: 0.3 });
+        }
+
+        function changeMonth(dir) {
+            currentDate.setMonth(currentDate.getMonth() + dir);
+            renderCalendar();
+        }
+
+        // Logic Task simple
+        document.getElementById('tInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                const div = document.createElement('div');
+                div.innerHTML = `<div style="padding:10px; border-bottom:1px solid var(--border)">${e.target.value}</div>`;
+                document.getElementById('tList').appendChild(div);
+                e.target.value = '';
+                gsap.from(div, { x: -20, opacity: 0 });
+            }
+        });
+
+        renderCalendar();
     </script>
 </body>
 </html>
